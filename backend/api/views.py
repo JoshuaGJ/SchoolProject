@@ -1,6 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from api.models import PriceRecord, Crop
 from api.serializers import PriceRecordSerializer, CropSerializer
 
@@ -32,3 +35,28 @@ class HistoricalPriceAnalyticsView(APIView):
         # Limit to the most recent 1,000 historical records to keep network payloads fast
         serializer = PriceRecordSerializer(records[:1000], many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class MarketPriceSearchAPIView(ListAPIView):
+    """
+    Advanced Endpoint for searching markets and filtering crop prices.
+    
+    Supported URL parameters:
+    - Search Market Name:  /api/prices/search/?search=Kampala
+    - Filter by Category: /api/prices/search/?crop__category=Grains
+    - Combined Query:     /api/prices/search/?search=Gulu&crop__name=Maize
+    """
+    queryset = PriceRecord.objects.all().order_by('-timestamp')
+    serializer_class = PriceRecordSerializer
+    
+    # Enable both strict field filtering and fuzzy text searching
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    
+    # 1. Exact matching lookups
+    filterset_fields = {
+        'crop__name': ['iexact', 'icontains'],
+        'crop__category': ['iexact'],
+    }
+    
+    # 2. Text search fields (this hooks up directly to your React search bar)
+    search_fields = ['market__name', 'market__region_location']
