@@ -4,8 +4,9 @@ from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from api.models import PriceRecord, Crop
-from api.serializers import PriceRecordSerializer, CropSerializer
+from api.models import PriceRecord, Crop, UserPreference, AgentProfile,Market
+from api.serializers import PriceRecordSerializer, CropSerializer, UserRegistrationSerializer, UserPreferenceSerializer
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 class CropListView(APIView):
     """
@@ -60,3 +61,60 @@ class MarketPriceSearchAPIView(ListAPIView):
     
     # 2. Text search fields (this hooks up directly to your React search bar)
     search_fields = ['market__name', 'market__region_location']
+
+class RegisterUserView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User account created successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TogglePinCropView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        crop_id = request.data.get('crop_id')
+        try:
+            crop = Crop.objects.get(id=crop_id)
+            #Fetch or create safety boundary for user preferences
+            pref, _ = UserPreference.objects.get_or_create(user=request.user)
+
+            if crop in pref.pinned_crops.all():
+                pref.pinned_cropa.remove(crop)
+                return Response({"status": "unpinned","message": f"Removed{crop.name} from your feed."}, status=status.HTTP_200_OK)
+            else:
+                pref.pinned_crops.add(crop)
+                return Response({"status": "pinned", "message": f"Pinned {crop.name} to your feed."}, status=status.HTTP_200_OK)
+        except Crop.DoesNotExist:
+            return Response({"error": "Crop record not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# 3. Agent Execution Actions Endpoint
+class AgentMarketActionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Strict Role Authorization Boundary Verification Check
+        try:
+            agent_profile = request.user.agent_profile
+        except AgentProfile.DoesNotExist:
+            return Response({"error": "Access Denied: Only regional agents can perform data entries."}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Inside this boundary, the validated Agent can now submit new data configurations
+        action_type = request.data.get('action') # e.g., 'create_market' or 'log_price'
+        
+        if action_type == 'create_market':
+            market_name = request.data.get('name')
+            if not market_name:
+                return Response({"error": "Market name required"}, status=status.HTTP_400_BAD_REQUEST)
+                
+            market, created = Market.objects.get_or_create(
+                name=market_name.strip(),
+                defaults={'region_location': agent_profile.assigned_region}
+            )
+            return Response({"message": f"Market {'created' if created else 'already exists'} in {agent_profile.assigned_region}."}, status=status.HTTP_201_CREATED)
+            
+        return Response({"error": "Invalid action profile specification"}, status=status.HTTP_400_BAD_REQUEST)

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models  import User
 
 
 # Models for Agricultural Market Transparency and Analytics
@@ -120,3 +121,33 @@ class PriceRecord(models.Model):
 		ts = self.timestamp.strftime("%Y-%m-%d %H:%M") if self.timestamp else "(no time)"
 		return f"{self.crop.name} @ {self.market.name}: W={self.wholesale_price} R={self.retail_price} on {ts}"
 
+# 1. Agent Profile Extension
+class AgentProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agent_profile')
+    assigned_region = models.CharField(max_length=100, help_text="e.g., Kampala, Gulu, Mbarara")
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+
+    def __str__(self):
+        return f"Agent: {self.user.username} ({self.assigned_region})"
+
+
+# 2. User Preferences for Pinning Crops
+class UserPreference(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
+    # A User can pin many crops, and a Crop can be pinned by many users
+    pinned_crops = models.ManyToManyField('Crop', blank=True, related_name='pinned_by')
+
+    def __str__(self):
+        return f"Preferences for {self.user.username}"
+
+
+# 3. Notification Model
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username} - {self.title}"

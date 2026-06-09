@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Market, Crop, PriceRecord
+from .models import Market, Crop, PriceRecord, AgentProfile, UserPreference
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class MarketSerializer(serializers.ModelSerializer):
@@ -40,3 +43,50 @@ class PriceRecordSerializer(serializers.ModelSerializer):
             "timestamp",
         ]
         read_only_fields = ["id", "timestamp"]
+
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    is_agent = serializers.BooleanField(write_only=True, default=False)
+    assigned_region = serializers.CharField(write_only=True, required=False, default="")
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'is_agent', 'assigned_region']
+
+    def create(self, validated_data):
+        # 1. Strip the custom agent data completely away from the User data fields
+        is_agent = validated_data.pop('is_agent', False)
+        assigned_region = validated_data.pop('assigned_region', "")
+        
+        # 2. Extract clean auth credentials
+        username = validated_data['username']
+        email = validated_data.get('email', '')
+        password = validated_data['password']
+        
+        # 3. Create the clean baseline User instance safely
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password
+        )
+        
+        # 4. Use the custom fields to build our separate AgentProfile relational row
+        if is_agent and assigned_region:
+            AgentProfile.objects.create(user=user, assigned_region=assigned_region.strip())
+            
+        return user
+    
+    #User preference / pinned Crops
+class UserPreferenceSerializer(serializers.ModelSerializer):
+    pinned_crops = CropSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = UserPreference
+        fields = ['pinned_crops']
+
+ 
+@receiver(post_save, sender=User)
+def create_user_preference(sender, instance, created, **kwargs):
+    if created: 
+        UserPreference.objects.create(user=instance)

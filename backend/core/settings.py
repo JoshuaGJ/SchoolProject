@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,8 +129,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 Q_CLUSTER = {
-    'name': 'market_analytics_cluster',
-    'workers': 2,
+    'name': 'market_analytics_cluster', 'workers': 2,
     'timeout': 60,
     'retry': 120,
     'orm': 'default', # Crucial: tells it to leverage your core Postgres connection
@@ -147,4 +147,8 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
     ],
+
+    'DEFAUL_AUTHENTICATION_CLASSES':(
+        'rest_framework_simplejwt.authentiation.JWTAuthentication',
+    )
 }
