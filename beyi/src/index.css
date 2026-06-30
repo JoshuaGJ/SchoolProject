@@ -1,0 +1,34 @@
+:root{
+    --app-color: #011b02;
+    --bg-color: #0a0f0b;
+    --text-color: #f0f4f1;
+    --card-bg: #141d16;
+    --border-color: #243528;
+    --accent-color: #10b981;
+    --input-bg: #141d16;
+    --muted-color: #8da391;
+    --popover-bg: #1a2e1c;
+    --hover-bg: rgba(16, 185, 129, 0.05);
+    --button-text: #0a0f0b;
+    --button-hover: #059669;
+    --login-bg: rgb(201, 188, 188);
+    --login-button-bg: #4CAF50;
+    --login-link: rgb(121, 214, 93);
+}
+
+.light-theme {
+    --bg-color: #f0f4f1;
+    --text-color: #0a0f0b;
+    --card-bg: #ffffff;
+    --border-color: #d1d5db;
+    --accent-color: #059669;
+    --input-bg: #ffffff;
+    --muted-color: #6b7280;
+    --popover-bg: #f9fafb;
+    --hover-bg: rgba(5, 150, 105, 0.05);
+    --button-text: #ffffff;
+    --button-hover: #047857;
+    --login-bg: #ffffff;
+    --login-button-bg: #4CAF50;
+    --login-link: #059669;
+}

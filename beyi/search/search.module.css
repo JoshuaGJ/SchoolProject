@@ -1,0 +1,92 @@
+.searchcontainer {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #2D5A27; /* Dark green border */
+  border-radius: 50px;       /* Makes it a pill shape */
+  padding: 8px 16px;
+  margin: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.searchcontainer input {
+  border: none;
+  outline: none;            /* Removes the blue ring on tap */
+  width: 100%;
+  font-size: 16px;          /* Prevents iOS from zooming in on focus */
+  padding: 10px;
+}
+
+.searchicon {
+  background: none;
+  border: none;
+  color: #2D5A27;
+  cursor: pointer;
+}
+
+.mapbox{
+    width: 80%;
+    height: 200px;
+    background-color: burlywood;
+    margin-bottom: 10px;
+}
+
+.circles{
+  max-width: auto;
+  display: none;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.circle{
+  text-align: center;
+  width: 100px;
+  height: 100px;
+  border: 3px solid;
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 5px;
+  align-content: center;
+  margin: 0;
+
+ p{
+  margin: 3px;
+ }
+}
+
+.compare{
+  display: none;
+  width: 90%;
+  border: 3px solid;
+  margin: 5px;
+  h4{
+    text-align: center;
+  }
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #2D5A27; /* Dark green border */
+  border-radius: 6px;       /* Makes it a pill shape */
+  padding: 8px 16px;
+  margin: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.filter input {
+  border: none;
+  outline: none;            /* Removes the blue ring on tap */
+  width: 100%;
+  font-size: 16px;          /* Prevents iOS from zooming in on focus */
+  padding: 10px;
+}
+
+.filtericon {
+  background: none;
+  border: none;
+  color: #2D5A27;
+  cursor: pointer;
+
+}

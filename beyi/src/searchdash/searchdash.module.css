@@ -1,0 +1,219 @@
+/* Note: Modules scope classes locally, so we use camelCase usually */
+.dashboardContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', sans-serif;
+}
+
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  gap: 20px;
+}
+
+.brand {
+  font-size: 24px;
+  font-weight: 800;
+  color: #10b981;
+}
+
+.searchContainer {
+  flex-grow: 1;
+  max-width: 600px;
+}
+
+.searchBar {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  outline: none;
+}
+
+.searchBar:focus {
+  border-color: var(--accent-color);
+}
+
+.authLinks {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.themeToggle {
+  background: var(--accent-color);
+  color: var(--button-text);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+  font-weight: 500;
+}
+
+.themeToggle:hover {
+  background: var(--button-hover);
+}
+
+/* Card Styling */
+.heroCard, .dataCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 20px;
+}
+
+.commodityTitle {
+  font-size: 32px;
+  margin: 8px 0;
+}
+
+.priceDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.priceValue {
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.trend.positive {
+  color: var(--accent-color);
+}
+
+.sparklineContainer {
+  height: 60px;
+  width: 100%;
+}
+
+.cardTitle {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+/* Table */
+.comparisonTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparisonTable th {
+  text-align: left;
+  color: var(--muted-color);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+}
+
+.comparisonTable td {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.bold { font-weight: 600; }
+.muted { color: var(--muted-color); font-size: 0.9rem; }
+
+/* Lists */
+.mb20 { 
+    margin-bottom: 20px; 
+    margin-top: 20px;
+}
+
+.listItems {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.listItems li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--muted-color);
+}
+
+.cropList {
+  list-style: none;
+  padding: 0;
+}
+
+.cropItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cropPrice {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.clickableRow {
+  cursor: pointer;
+  position: relative; /* Essential for the popover positioning */
+  transition: background 0.2s;
+}
+
+.clickableRow:hover {
+  background: var(--hover-bg);
+}
+
+.marketPopover {
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  width: 220px;
+  background: var(--popover-bg);
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  color: var(--text-color);
+}
+
+.marketPopover h4 {
+  margin: 0 0 10px 0;
+  color: var(--accent-color);
+}
+
+.textEmerald { color: var(--accent-color); }
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border-color);
+  margin: 12px 0;
+}
+
+.directionBtn {
+  width: 100%;
+  padding: 8px;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 4px;
+  color: var(--button-text);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.directionBtn:hover {
+  background: var(--button-hover);
+}
