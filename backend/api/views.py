@@ -4,9 +4,13 @@ from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import OuterRef, Subquery,Q, Max
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 from api.models import PriceRecord, Crop, UserPreference, AgentProfile,Market
 from api.serializers import PriceRecordSerializer, CropSerializer, UserRegistrationSerializer, UserPreferenceSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class CropListView(APIView):
     """
@@ -38,6 +42,8 @@ class HistoricalPriceAnalyticsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
+    
+
 class MarketPriceSearchAPIView(ListAPIView):
     """
     Advanced Endpoint for searching markets and filtering crop prices.
@@ -47,7 +53,6 @@ class MarketPriceSearchAPIView(ListAPIView):
     - Filter by Category: /api/prices/search/?crop__category=Grains
     - Combined Query:     /api/prices/search/?search=Gulu&crop__name=Maize
     """
-    queryset = PriceRecord.objects.all().order_by('-timestamp')
     serializer_class = PriceRecordSerializer
     
     # Enable both strict field filtering and fuzzy text searching
@@ -57,10 +62,31 @@ class MarketPriceSearchAPIView(ListAPIView):
     filterset_fields = {
         'crop__name': ['iexact', 'icontains'],
         'crop__category': ['iexact'],
+        'market__name': ['iexact', 'icontains'],
     }
     
-    # 2. Text search fields (this hooks up directly to your React search bar)
-    search_fields = ['market__name', 'market__region_location']
+    # 2. Text search fields (crop-centric search for the React search bar)
+    search_fields = [
+        'crop__name',
+        'crop__category',
+        'market__name',
+        'market__region_location',
+        'market__village',
+    ]
+
+    def get_queryset(self):
+        """
+        Return only the latest price record per market.
+        Uses distinct() with ordering for better performance.
+        
+        return PriceRecord.objects.filter(
+            id__in=PriceRecord.objects.values('market')
+            .annotate(latest_id=Max('id'))
+            .values('latest_id')
+        ).select_related('crop', 'market').order_by('-timestamp')
+        """
+        return PriceRecord.objects.select_related('crop', 'market').order_by('-timestamp')
+        
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -71,6 +97,34 @@ class RegisterUserView(APIView):
             serializer.save()
             return Response({"message": "User account created successfully!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EmailLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        password = request.data.get('password', '')
+
+        if not email or not password:
+            return Response({"detail": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            return Response({"detail": "Unable to log in with the provided email and password."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        authenticated_user = authenticate(username=user.username, password=password)
+        if not authenticated_user:
+            return Response({"detail": "Unable to log in with the provided email and password."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        refresh = RefreshToken.for_user(authenticated_user)
+        role = 'agent' if hasattr(authenticated_user, 'agent_profile') else 'farmer'
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "role": role,
+        }, status=status.HTTP_200_OK)
 
 class TogglePinCropView(APIView):
     permission_classes = [IsAuthenticated]

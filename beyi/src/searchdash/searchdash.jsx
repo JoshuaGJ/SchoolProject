@@ -40,12 +40,16 @@ const formatRelativeTime = (timestamp) => {
 const Searchdash = () => {
   const { isLightTheme, toggleTheme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [searchFeedback, setSearchFeedback] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState(null);
   const [detail, setDetail] = useState(null);
-  const popoverRef = useRef(null); // The "sticky note" for our box
+  const popoverRef = useRef(null);
   const [priceRecords, setPriceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const farmerLocation = (localStorage.getItem('farmerLocation') || '').trim().toLowerCase();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -60,43 +64,91 @@ const Searchdash = () => {
     };
   }, []);
 
+  // --- Load data with optional search parameter ---
+  const loadPriceRecords = async (searchQuery = '') => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Build the URL with search param if provided
+      const url = searchQuery 
+        ? `/prices/search/?search=${encodeURIComponent(searchQuery)}` 
+        : '/prices/search/';
+      
+      console.log('🔄 Fetching from:', url); // Debug
+      const data = await fetchJson(url);
+      console.log('📦 Data received:', data); // Debug
+      
+     let recordsArray = [];
+      if (Array.isArray(data)) {
+        recordsArray = data;
+      } else if (data && Array.isArray(data.results)) {
+        recordsArray = data.results;
+      }
+      
+      setPriceRecords(recordsArray);
+      
+      // Update feedback based on results count
+      const resultCount = recordsArray.length;
+      if (searchQuery && resultCount === 0) {
+        setSearchFeedback(`😕 No crops found for "${searchQuery}".`);
+      } else if (searchQuery) {
+        setSearchFeedback(`✅ Found ${resultCount} crop${resultCount !== 1 ? 's' : ''} matching "${searchQuery}".`);
+      } else {
+        setSearchFeedback('Showing all available crops.');
+      }
+      
+    } catch (requestError) {
+      console.error('❌ Error loading data:', requestError);
+      setError(requestError.message || 'Unable to load market data.');
+      setPriceRecords([]);
+      setSearchFeedback('❌ Failed to load data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Initial load on mount ---
   useEffect(() => {
     let isMounted = true;
 
-    const loadPriceRecords = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        const data = await fetchJson('/prices/search/');
-
-        if (isMounted) {
-          setPriceRecords(Array.isArray(data) ? data : []);
-        }
-      } catch (requestError) {
-        if (isMounted) {
-          setError(requestError.message || 'Unable to load market data.');
-          setPriceRecords([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    const loadInitial = async () => {
+      if (!isMounted) return;
+      await loadPriceRecords('');
     };
 
-    loadPriceRecords();
+    loadInitial();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
+  // --- Handle search submission ---
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    
+    const nextSearchTerm = searchTerm.trim();
+    setActiveSearchTerm(nextSearchTerm);
+    setIsSearching(true);
+    
+    if (nextSearchTerm) {
+      setSearchFeedback(`🔍 Searching for "${nextSearchTerm}"...`);
+    } else {
+      setSearchFeedback('Loading all crops...');
+    }
+    
+    loadPriceRecords(nextSearchTerm).finally(() => {
+      setIsSearching(false);
+    });
+  };
+
   const handleMarketClick = (index, e) => {
     e.stopPropagation();
     setSelectedMarket(selectedMarket === index ? null : index);
   };
-  const lower = searchTerm.toLowerCase();
 
+  // --- Normalize records ---
   const normalizedRecords = priceRecords.map((record) => ({
     id: record.id,
     marketName: record.market?.name ?? 'Unknown market',
@@ -110,71 +162,96 @@ const Searchdash = () => {
     timestamp: record.timestamp,
   }));
 
-  const filteredMarketData = normalizedRecords.filter((record) =>
-    [record.marketName, record.cropName, record.region, record.village, String(record.wholesalePrice), String(record.retailPrice), record.updated]
+ // --- Get unique crop-market pairs with the absolute latest record ---
+  const currentMarketRecords = Array.from(
+    normalizedRecords.reduce((marketMap, record) => {
+      // 🔧 FIX: Create a composite key combining market AND crop name
+      const compositeKey = `${record.marketName}-${record.cropName}`;
+      
+      const existing = marketMap.get(compositeKey);
+      if (!existing || new Date(record.timestamp).getTime() > new Date(existing.timestamp).getTime()) {
+        marketMap.set(compositeKey, record);
+      }
+      return marketMap;
+    }, new Map()).values()
+  );
+
+  // --- Apply search filter to the fully retained data matrix ---
+  const lower = activeSearchTerm.toLowerCase();
+  
+  const filteredMarketData = currentMarketRecords.filter((record) =>
+    [record.cropName, record.category, record.marketName, record.region, record.village]
       .join(' ')
       .toLowerCase()
       .includes(lower)
   );
+  
+  const limitedMarketData = filteredMarketData.slice(0, 7);
 
+  // --- Related Crops (filtered by search) ---
   const relatedCrops = Array.from(
-    normalizedRecords.reduce((cropMap, record) => {
+    filteredMarketData.reduce((cropMap, record) => {
       if (!cropMap.has(record.cropName)) {
         cropMap.set(record.cropName, {
           name: record.cropName,
           price: formatPrice(record.retailPrice ?? record.wholesalePrice),
         });
       }
-
       return cropMap;
     }, new Map()).values()
   ).slice(0, 3);
 
-  const nearbyMarkets = Array.from(
-    normalizedRecords.reduce((marketMap, record) => {
-      if (!marketMap.has(record.marketName)) {
-        marketMap.set(record.marketName, {
-          id: record.id,
-          name: record.marketName,
-          district: record.region,
-          village: record.village,
-          price: formatPrice(record.retailPrice ?? record.wholesalePrice),
-          cropName: record.cropName,
-        });
-      }
-
-      return marketMap;
-    }, new Map()).values()
-  ).filter((market) =>
-    [market.name, market.district, market.village, market.price, market.cropName]
-      .join(' ')
-      .toLowerCase()
-      .includes(lower)
-  );
+  // --- Nearby Markets (filtered by search) ---
+  const nearbyMarkets = filteredMarketData
+    .map((record) => ({
+      id: record.id,
+      name: record.marketName,
+      district: record.region,
+      village: record.village,
+      price: formatPrice(record.retailPrice ?? record.wholesalePrice),
+      cropName: record.cropName,
+      isNearby: farmerLocation ? 
+        [record.marketName, record.region, record.village].join(' ').toLowerCase().includes(farmerLocation) : 
+        false,
+    }))
+    .sort((left, right) => {
+      if (!farmerLocation) return 0;
+      if (left.isNearby && !right.isNearby) return -1;
+      if (!left.isNearby && right.isNearby) return 1;
+      return left.name.localeCompare(right.name);
+    });
+  const limitedNearbyMarkets = nearbyMarkets.slice(0, 4);
 
   const detailRecord = detail || null;
+  const primaryCommodity = filteredMarketData[0];
 
   return (
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
         <div className={styles.brand}>Beyi</div>
         <div className={styles.searchContainer}>
-          <form onSubmit={(e) => e.preventDefault()} className={styles.searchForm}>
+          <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
             <input
               type="text"
               className={styles.searchBar}
-              placeholder="Search for commodities, markets, or prices"
+              placeholder="Search crops and press Enter"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search for crops"
             />
-            <button type="button" className={styles.clearBtn} onClick={() => setSearchTerm('')}>
-              Clear
+            <button type="submit" className={styles.clearBtn} disabled={isSearching}>
+              {isSearching ? '⏳' : 'Enter'}
             </button>
           </form>
+          {searchFeedback && (
+            <p className={`${styles.searchFeedback} ${isSearching ? styles.searching : ''}`} aria-live="polite">
+              {searchFeedback}
+            </p>
+          )}
         </div>
         <div>
           <button onClick={toggleTheme} className={styles.themeToggle}>
-            {isLightTheme ? 'Dark' : 'Light'} Theme
+            {isLightTheme ? '🌙' : '☀️'} {isLightTheme ? 'Dark' : 'Light'}
           </button>
           <Link to="/auth" className={styles.authLinks}>Login / Signup</Link>
         </div>
@@ -186,38 +263,66 @@ const Searchdash = () => {
           <div className={styles.heroCard}>
             <span className={styles.label}>Primary Commodity</span>
             <h2 className={styles.commodityTitle}>
-              {normalizedRecords[0]?.cropName || 'No crop data'}
+              {primaryCommodity?.cropName || 
+               (activeSearchTerm ? `No crops found for "${activeSearchTerm}"` : 'No crop data')}
             </h2>
             <div className={styles.priceDisplay}>
               <span className={styles.priceValue}>
-                {normalizedRecords[0] ? formatPrice(normalizedRecords[0].retailPrice ?? normalizedRecords[0].wholesalePrice) : '—'}
+                {primaryCommodity ? 
+                  formatPrice(primaryCommodity.retailPrice ?? primaryCommodity.wholesalePrice) : 
+                  '—'}
               </span>
             </div>
             <div className={styles.sparklineContainer}>
               <span className={styles.unit}>
-                {normalizedRecords[0]?.marketName ? `Market: ${normalizedRecords[0].marketName}` : 'Unit kg'}
+                {primaryCommodity?.marketName ? 
+                  `Market: ${primaryCommodity.marketName}` : 
+                  'Unit kg'}
               </span>
             </div>
           </div>
 
           <div className={styles.dataCard}>
-            <h3 className={styles.cardTitle}>Related Crops</h3>
-            <ul className={styles.cropList}>
-              {relatedCrops.map((crop) => (
-                <li key={crop.name} className={styles.cropItem}>
-                  <span>{crop.name}</span>
-                  <span className={styles.cropPrice}>{crop.price}</span>
-                </li>
-              ))}
-            </ul>
+            <h3 className={styles.cardTitle}>
+              Related Crops
+              {activeSearchTerm && (
+                <span className={styles.resultCount}>
+                  ({relatedCrops.length})
+                </span>
+              )}
+            </h3>
+            {relatedCrops.length > 0 ? (
+              <ul className={styles.cropList}>
+                {relatedCrops.map((crop) => (
+                  <li key={crop.name} className={styles.cropItem}>
+                    <span>{crop.name}</span>
+                    <span className={styles.cropPrice}>{crop.price}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={styles.muted}>No related crops found.</p>
+            )}
           </div>
-
         </section>
 
         {/* Center Column */}
         <section className={styles.columnCenter}>
           <div className={styles.dataCard}>
-            <h3 className={styles.cardTitle}>Market Comparison</h3>
+            <h3 className={styles.cardTitle}>
+              Market Comparison
+              {activeSearchTerm && (
+                <span className={styles.resultCount}>
+                  ({filteredMarketData.length} market{filteredMarketData.length !== 1 ? 's' : ''})
+                </span>
+              )}
+            </h3>
+            {!loading && !error && filteredMarketData.length === 0 && activeSearchTerm && (
+              <div className={styles.noResults}>
+                <p>No markets found for "{activeSearchTerm}"</p>
+                <p className={styles.muted}>Try searching for a different crop name.</p>
+              </div>
+            )}
             <table className={styles.comparisonTable}>
               <thead>
                 <tr>
@@ -237,14 +342,24 @@ const Searchdash = () => {
                     <td colSpan="3" className={styles.muted}>{error}</td>
                   </tr>
                 )}
-                {!loading && !error && filteredMarketData.map((market, index) => (
+                {!loading && !error && limitedMarketData.length === 0 && !activeSearchTerm && (
+                  <tr>
+                    <td colSpan="3" className={styles.muted}>No market data available.</td>
+                  </tr>
+                )}
+                {!loading && !error && limitedMarketData.map((market, index) => (
                   <tr
                     key={`${market.id}-${index}`}
                     className={styles.clickableRow}
                     onClick={(e) => handleMarketClick(index, e)}
                   >
-                    <td>
+                    <td className={styles.marketCell}>
                       {market.marketName}
+                      {farmerLocation && 
+                        [market.marketName, market.region, market.village].join(' ').toLowerCase().includes(farmerLocation) && (
+                          <span className={styles.nearbyBadge}>📍 Nearby</span>
+                        )
+                      }
                       {selectedMarket === index && (
                         <div ref={popoverRef} className={styles.marketPopover} onClick={(e) => e.stopPropagation()}>
                           <h4>{market.marketName} Details</h4>
@@ -266,29 +381,47 @@ const Searchdash = () => {
               </tbody>
             </table>
           </div>
-
-            
-
         </section>
 
         {/* Right Column */}
         <aside className={styles.columnSidebar}>
-         
-             <div className={`${styles.dataCard} ${styles.mb20}`}>
-            <h3 className={styles.cardTitle}>Nearby Markets</h3>
+          <div className={`${styles.dataCard} ${styles.mb20}`}>
+            <h3 className={styles.cardTitle}>
+              Nearby Markets
+              {activeSearchTerm && (
+                <span className={styles.resultCount}>
+                  ({nearbyMarkets.length})
+                </span>
+              )}
+            </h3>
             <ul className={styles.listItems}>
-                {!loading && !error && nearbyMarkets.map((market) => (
-                  <li key={`${market.name}-${market.district}`}>
-                    <a onClick={() => setDetail(market)}>
-                      <h4>{market.name}</h4>
-                      <p>{market.district} {market.village ? `• ${market.village}` : ''}</p>
-                      <p><b>{market.price}</b></p>
-                    </a>
-                  </li>
-                ))}
-                {!loading && !error && nearbyMarkets.length === 0 && <li>No nearby markets found.</li>}
+              {!loading && !error && limitedNearbyMarkets.map((market) => (
+                <li key={`${market.name}-${market.district}`} className={styles.marketListItem}>
+                  <a onClick={() => setDetail(market)} className={styles.marketLink}>
+                    <h4>
+                      {market.name}
+                      {market.isNearby && (
+                        <span className={styles.nearbyBadge}>📍 Nearby</span>
+                      )}
+                    </h4>
+                    <p>
+                      {market.district} 
+                      {market.village ? ` • ${market.village}` : ''}
+                    </p>
+                    <p><b>{market.price}</b></p>
+                  </a>
+                </li>
+              ))}
+              {!loading && !error && limitedNearbyMarkets.length === 0 && (
+                <li className={styles.noResults}>
+                  {activeSearchTerm ? 
+                    `No nearby markets found for "${activeSearchTerm}".` : 
+                    'No nearby markets available.'}
+                </li>
+              )}
             </ul>
           </div>
+          
           {detailRecord && (
             <div className={styles.dataCard}>
               <h3 className={styles.cardTitle}>Market Details</h3>
@@ -299,7 +432,6 @@ const Searchdash = () => {
               <button className={styles.directionBtn} onClick={() => setDetail(null)}>Close</button>
             </div>
           )}
-          
         </aside>
       </main>
     </div>

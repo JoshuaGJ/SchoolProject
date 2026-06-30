@@ -5,7 +5,7 @@ import { fetchJson } from '../lib/api'
 
 function Login(){
     const navigate = useNavigate();
-    const [username, setUsername] = useState('')
+    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -18,12 +18,12 @@ function Login(){
         try {
             const tokens = await fetchJson('/auth/login/', {
                 method: 'POST',
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ email, password }),
             });
 
             localStorage.setItem('accessToken', tokens.access);
             localStorage.setItem('refreshToken', tokens.refresh);
-            navigate('/dash');
+            navigate(tokens.role === 'agent' ? '/dash' : '/home');
         } catch (requestError) {
             setError(requestError.message || 'Unable to log in.');
         } finally {
@@ -37,14 +37,14 @@ function Login(){
                 <h1>Welcome Back</h1>
                 <form className={styles.form} onSubmit={handleSubmit}>
 
-                        <label htmlFor="username"> UserName</label>
+                        <label htmlFor="email"> Email</label>
                         <input
-                            type="text"
-                            id="username"
-                            name="username"
+                            type="email"
+                            id="email"
+                            name="email"
                             required
-                            value={username}
-                            onChange={(event) => setUsername(event.target.value)}
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
                         />
 
                         <label htmlFor="password">Password</label>

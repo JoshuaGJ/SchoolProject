@@ -133,12 +133,13 @@ class AgentProfile(models.Model):
 
 # 2. User Preferences for Pinning Crops
 class UserPreference(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
+	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
+	location = models.CharField(max_length=100, blank=True, default='')
     # A User can pin many crops, and a Crop can be pinned by many users
-    pinned_crops = models.ManyToManyField('Crop', blank=True, related_name='pinned_by')
+	pinned_crops = models.ManyToManyField('Crop', blank=True, related_name='pinned_by')
 
-    def __str__(self):
-        return f"Preferences for {self.user.username}"
+	def __str__(self):
+		return f"Preferences for {self.user.username}"
 
 
 # 3. Notification Model

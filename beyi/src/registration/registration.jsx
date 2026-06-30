@@ -8,12 +8,21 @@ function SignupForm() {
     const [lastName, setLastName] = useState('')
     const [contact, setContact] = useState('')
     const [email, setEmail] = useState('')
+    const [location, setLocation] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [assignedRegion, setAssignedRegion] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+
+    const handleRoleSelect = (selectedRole) => {
+        setRole(selectedRole)
+
+        if (selectedRole === 'farmer') {
+            setAssignedRegion('')
+        }
+    }
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -30,16 +39,26 @@ function SignupForm() {
         const username = `${firstName.trim()}${lastName.trim() ? `.${lastName.trim()}` : ''}`.replace(/\s+/g, '.').toLowerCase()
 
         try {
+            const requestBody = {
+                username,
+                email,
+                password,
+                is_agent: role === 'agent',
+                farmer_location: role === 'farmer' ? location.trim() : '',
+            }
+
+            if (role === 'agent') {
+                requestBody.assigned_region = assignedRegion.trim()
+            }
+
             await fetchJson('/auth/register/', {
                 method: 'POST',
-                body: JSON.stringify({
-                    username,
-                    email,
-                    password,
-                    is_agent: role === 'agent',
-                    assigned_region: role === 'agent' ? assignedRegion : '',
-                }),
+                body: JSON.stringify(requestBody),
             })
+
+            if (role === 'farmer' && location.trim()) {
+                localStorage.setItem('farmerLocation', location.trim())
+            }
 
             setSuccess('Account created successfully. You can now log in.')
         } catch (requestError) {
@@ -55,9 +74,21 @@ function SignupForm() {
 
             <h1>Create your Beyi Account</h1>
 
-            <div>
-                <button type="button" onClick={() => setRole('farmer')}>I'M A FARMER</button>
-                <button type="button" onClick={() => setRole('agent')}>I'M AN AGENT</button>
+            <div className={styles.roleSwitcher}>
+                <button
+                    type="button"
+                    onClick={() => handleRoleSelect('farmer')}
+                    className={`${styles.roleButton} ${role === 'farmer' ? styles.roleButtonActive : ''}`}
+                >
+                    I'M A FARMER
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleRoleSelect('agent')}
+                    className={`${styles.roleButton} ${role === 'agent' ? styles.roleButtonActive : ''}`}
+                >
+                    I'M AN AGENT (OPTIONAL)
+                </button>
             </div>
 
             <form  className={styles.form} onSubmit={handleSubmit}>
@@ -73,6 +104,21 @@ function SignupForm() {
 
                 <label htmlFor="email">Email Address</label>
                 <input type="email" id="email" name="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+
+                {role === 'farmer' && (
+                    <>
+                        <label htmlFor="location">Your Location</label>
+                        <input
+                            type="text"
+                            id="location"
+                            name="location"
+                            placeholder="District, town, or village"
+                            required
+                            value={location}
+                            onChange={(event) => setLocation(event.target.value)}
+                        />
+                    </>
+                )}
 
                 <label htmlFor="password">Password</label>
                 <input type="password" id="password" name="password" required value={password} onChange={(event) => setPassword(event.target.value)} />

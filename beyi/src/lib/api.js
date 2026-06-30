@@ -8,7 +8,7 @@ export const buildApiUrl = (path) => {
 };
 
 export async function fetchJson(path, options = {}) {
-  const response = await fetch(buildApiUrl(path), {
+const response = await fetch(buildApiUrl(path), {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -26,4 +26,10 @@ export async function fetchJson(path, options = {}) {
   }
 
   return response.json();
+  
 }
+
+export const searchPrices = async (searchTerm) => {
+  const queryParams = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : '';
+  return fetchJson(`/prices/search/${queryParams}`);
+};
