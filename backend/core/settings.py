@@ -148,7 +148,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
     ],
 
-    'DEFAUL_AUTHENTICATION_CLASSES':(
-        'rest_framework_simplejwt.authentiation.JWTAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES':(
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
