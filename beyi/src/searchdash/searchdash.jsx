@@ -143,6 +143,20 @@ const Searchdash = () => {
     });
   };
 
+  const handleRelatedCropClick = (cropName) => {
+    const nextSearchTerm = cropName.trim();
+    setSearchTerm(nextSearchTerm);
+    setActiveSearchTerm(nextSearchTerm);
+    setIsSearching(true);
+    setDetail(null);
+    setSelectedMarket(null);
+    setSearchFeedback(`🔍 Searching for "${nextSearchTerm}"...`);
+
+    loadPriceRecords(nextSearchTerm).finally(() => {
+      setIsSearching(false);
+    });
+  };
+
   const handleMarketClick = (index, e) => {
     e.stopPropagation();
     setSelectedMarket(selectedMarket === index ? null : index);
@@ -295,8 +309,14 @@ const Searchdash = () => {
               <ul className={styles.cropList}>
                 {relatedCrops.map((crop) => (
                   <li key={crop.name} className={styles.cropItem}>
-                    <span>{crop.name}</span>
-                    <span className={styles.cropPrice}>{crop.price}</span>
+                    <button
+                      type="button"
+                      className={styles.cropButton}
+                      onClick={() => handleRelatedCropClick(crop.name)}
+                    >
+                      <span>{crop.name}</span>
+                      <span className={styles.cropPrice}>{crop.price}</span>
+                    </button>
                   </li>
                 ))}
               </ul>

@@ -1,167 +1,285 @@
-.dash{
-    background-color: var(--app-color );
+.dash {
+    background-color: var(--app-color);
     display: flex;
     flex-direction: column;
     color: white;
-    margin: 0px;
+    min-height: 100vh;
+    margin: 0;
     padding: 10px;
-
 }
 
-.head{
-    
+.head {
     margin: 15px;
 }
 
-.locbtn{
-    width: 150px;
-    border-radius: 10px;
+.headerTopRow {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.subtitle {
+    margin: 6px 0 0;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.marketPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    width: fit-content;
+}
+
+.pdash {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 5px;
+}
+
+.addcrop,
+.plist,
+.locationCard {
+    background-color: white;
+    color: black;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.addcrop {
+    margin: 10px 0;
+}
+
+.addcrop h3,
+.plist h3,
+.locationCard h3 {
+    color: black;
+    text-align: center;
+    margin: 0 0 10px;
+}
+
+.formBlock,
+.locationForm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: black;
+}
+
+.addcrop input,
+.locationForm input,
+.inlinePriceInput {
+    border: 2px solid rgb(14, 68, 14);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.addcrop button,
+.locbtn,
+.applyMarketBtn,
+.inlineSaveBtn,
+.inlineCancelBtn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+}
+
+.addcrop button,
+.applyMarketBtn,
+.inlineSaveBtn {
+    background-color: var(--app-color);
+    color: white;
+}
+
+.locbtn {
+    width: 100%;
     background-color: rgb(224, 224, 224);
 }
 
-.pdash{
-display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-   
-    margin: 5px;
-    
+.plist {
+    min-width: 0;
+    overflow: hidden;
 }
 
-.addcrop{
-    flex: 0 1 auto;
-    min-width: 150px;
-    margin: 10px;
-     background-color: white;
-     border-radius: 10px;
-
-    form{
-       border-radius: 10px;
-        color: black;
-        display: flex;
-        flex-direction: column;
-        margin: 10px;
-        label{margin: 5px;}
-
-        button{
-            
-            margin: 10px;
-            border-radius: 7px;
-            background-color: var(--app-color);
-            color: white;
-        }
-
-        
-    }
-
-}
-
-.addcrop h3{
-            color: black;
-            text-align: center;
-            margin-bottom: 0;
-        }
-
-.addcrop input{
-    text-underline-offset: rgb(14, 68, 14);
+.priceSearchInput {
+    width: 100%;
+    margin-top: 10px;
     border: 2px solid rgb(14, 68, 14);
-    border-radius: 5px;
-    padding: 5px;
-}
-
-.plist{
-    flex: 1 1 auto;
-    background-color: white;
-    color: black;
-    padding: 10px;
-    margin: 10px;
     border-radius: 10px;
-    
-    min-width: 150px;
-    overflow-y: auto;
-    
-
-    ul{
-       list-style-type: none;
-       padding-left: 0;
-       margin-left: 0;
-       cursor: pointer;
-    }
+    padding: 10px 12px;
 }
 
-.plist h3{
-            color: black;
-            text-align: center;
-            
-        }
+.tableHeaderRow {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 0.5fr;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.62);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
 
-.update{
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+.priceList {
     display: flex;
     flex-direction: column;
-    background-color: rgb(92, 92, 92);
-    align-items: center;
-}
-.loction{
-    align-items: center;
-    form{
-        display: flex;
-        flex-direction: column;
-        width:70%;
-        
-    }
-}
-
-.loction button{
-            border-radius: 10px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            
-        }
-
-.loction input{
+    gap: 10px;
     margin-top: 10px;
-    margin-bottom: 10px;
-    text-underline-offset: rgb(14, 68, 14);
-    border: 2px solid rgb(14, 68, 14);
-    border-radius: 5px;
-    padding: 5px;
 }
 
-.pupdate{
-    
-    form{
-        display: flex;
-        flex-direction: column; 
-        
-        width:70%;
-        
-    }
+.priceRow {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
 }
 
-.pupdate input{
-    text-underline-offset: rgb(14, 68, 14);
-    border: 2px solid rgb(14, 68, 14);
-    border-radius: 5px;
-    padding: 5px; 
+.priceRowActive {
+    border-color: var(--app-color);
+    box-shadow: 0 0 0 2px rgba(1, 27, 2, 0.08);
 }
 
-.pupdate input{
-    margin-top: 10px;
-    margin-bottom: 10px;
+.priceRowButton,
+.priceRowEdit {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 0.5fr;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: none;
+    text-align: left;
+    color: inherit;
 }
 
-.btn{
+.priceRowButton {
+    cursor: pointer;
+}
+
+.priceRowButton:hover {
+    background: rgba(1, 27, 2, 0.04);
+}
+
+.rowMeta,
+.helperText {
+    display: block;
+    margin-top: 4px;
+    color: rgba(0, 0, 0, 0.58);
+    font-size: 0.85rem;
+}
+
+.rowPrice {
+    font-weight: 700;
+    color: var(--app-color);
+}
+
+.rowActionHint {
+    justify-self: end;
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.inlineActions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.inlineCancelBtn {
+    background: rgba(0, 0, 0, 0.08);
+    color: black;
+}
+
+.successText {
+    color: #0a7a1f;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.errorText {
+    color: #b42318;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.locationSummary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.locationActions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.warningBox {
+    width: min(92vw, 460px);
+    padding: 18px;
+    border-radius: 16px;
+    background: #111827;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.warningOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.warningBox h3 {
+    margin: 0 0 10px;
+}
+
+.warningBox p {
+    margin: 0;
+}
+
+.warningActions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+@media (min-width: 900px) {
+    .pdash {
+        grid-template-columns: 1fr 1.25fr;
+        align-items: start;
+    }
+
+    .headerTopRow {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .locationActions {
+        flex-direction: row;
+    }
+
+    .locbtn {
+        width: auto;
+        min-width: 220px;
+    }
+
+    /*justify-content: space-between;*/
     button{
         border-radius: 10px;
         margin: 6px;

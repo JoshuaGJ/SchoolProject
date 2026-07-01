@@ -79,10 +79,14 @@ class MarketPriceSearchAPIView(ListAPIView):
         Return only the latest price record per market.
         Uses distinct() with ordering for better performance.
         
+        # Return only the latest price record per market and crop.
+        latest_market_crop_record = PriceRecord.objects.filter(
+            market=OuterRef('market'),
+            crop=OuterRef('crop'),
+        ).order_by('-timestamp', '-id')
+
         return PriceRecord.objects.filter(
-            id__in=PriceRecord.objects.values('market')
-            .annotate(latest_id=Max('id'))
-            .values('latest_id')
+            id=Subquery(latest_market_crop_record.values('id')[:1])
         ).select_related('crop', 'market').order_by('-timestamp')
         """
         return PriceRecord.objects.select_related('crop', 'market').order_by('-timestamp')
@@ -120,10 +124,12 @@ class EmailLoginView(APIView):
 
         refresh = RefreshToken.for_user(authenticated_user)
         role = 'agent' if hasattr(authenticated_user, 'agent_profile') else 'farmer'
+        assigned_region = authenticated_user.agent_profile.assigned_region if role == 'agent' else ''
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
             "role": role,
+            "assigned_region": assigned_region,
         }, status=status.HTTP_200_OK)
 
 class TogglePinCropView(APIView):
@@ -170,5 +176,41 @@ class AgentMarketActionView(APIView):
                 defaults={'region_location': agent_profile.assigned_region}
             )
             return Response({"message": f"Market {'created' if created else 'already exists'} in {agent_profile.assigned_region}."}, status=status.HTTP_201_CREATED)
+
+        if action_type == 'log_price':
+            market_name = request.data.get('market_name')
+            crop_name = request.data.get('crop_name')
+            price_value = request.data.get('price')
+            unit = request.data.get('unit', 'kg')
+
+            if not market_name or not crop_name or price_value in (None, ''):
+                return Response({"error": "Market name, crop name, and price are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                normalized_price = int(float(price_value))
+            except (TypeError, ValueError):
+                return Response({"error": "Price must be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
+
+            market, _ = Market.objects.get_or_create(
+                name=market_name.strip(),
+                defaults={'region_location': agent_profile.assigned_region}
+            )
+
+            crop, _ = Crop.objects.get_or_create(
+                name=crop_name.strip().title(),
+                defaults={'category': unit.strip().title() if unit else 'Uncategorized'}
+            )
+
+            price_record = PriceRecord.objects.create(
+                market=market,
+                crop=crop,
+                wholesale_price=normalized_price,
+                retail_price=normalized_price,
+            )
+
+            return Response({
+                "message": f"Logged price for {crop.name} at {market.name}.",
+                "price_record": PriceRecordSerializer(price_record).data,
+            }, status=status.HTTP_201_CREATED)
             
         return Response({"error": "Invalid action profile specification"}, status=status.HTTP_400_BAD_REQUEST)

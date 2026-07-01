@@ -23,6 +23,10 @@ function Login(){
 
             localStorage.setItem('accessToken', tokens.access);
             localStorage.setItem('refreshToken', tokens.refresh);
+            if (tokens.role === 'agent' && tokens.assigned_region) {
+                localStorage.setItem('agentAssignedRegion', tokens.assigned_region);
+                localStorage.setItem('agentMarketName', tokens.assigned_region);
+            }
             navigate(tokens.role === 'agent' ? '/dash' : '/home');
         } catch (requestError) {
             setError(requestError.message || 'Unable to log in.');

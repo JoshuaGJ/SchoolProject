@@ -161,10 +161,26 @@
 }
 
 .cropItem {
-  display: flex;
-  justify-content: space-between;
   padding: 10px 0;
   border-bottom: 1px solid var(--border-color);
+}
+
+.cropButton {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cropButton:hover {
+  color: var(--accent-color);
 }
 
 .cropPrice {

@@ -12,9 +12,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Searchdash/>}/>
-          <Route path="/auth" element={<Login/>}/>
+          <Route path="/login" element={<Login/>}/>
           <Route path="/signup" element={<SignupForm/>}/>
-          <Route path="/login/login.jsx" element={<Navigate to="/auth" replace />}/>
+          
           <Route path='/dash' element={<Dashboard/>}/>
           <Route path="*" element={<div>404 — Page not found</div>} />
         </Routes>
