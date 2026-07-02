@@ -143,7 +143,7 @@ class TogglePinCropView(APIView):
             pref, _ = UserPreference.objects.get_or_create(user=request.user)
 
             if crop in pref.pinned_crops.all():
-                pref.pinned_cropa.remove(crop)
+                pref.pinned_crops.remove(crop)
                 return Response({"status": "unpinned","message": f"Removed{crop.name} from your feed."}, status=status.HTTP_200_OK)
             else:
                 pref.pinned_crops.add(crop)

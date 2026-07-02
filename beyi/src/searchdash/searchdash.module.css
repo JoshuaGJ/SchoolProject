@@ -100,6 +100,34 @@
   font-weight: 700;
 }
 
+.heroHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.pinBtn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.6;
+}
+
+.pinBtn:hover {
+  transform: scale(1.15);
+  opacity: 1;
+}
+
+.pinBtnActive {
+  opacity: 1;
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15));
+}
+
 .trend.positive {
   color: var(--accent-color);
 }

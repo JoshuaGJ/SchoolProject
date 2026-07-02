@@ -12,4 +12,5 @@ urlpatterns = [
     path('user/pin-crop/', TogglePinCropView.as_view(), name='user-pin-crop'),
     path('agent/market-action/', AgentMarketActionView.as_view(), name='agent-market-action'),
     
+    
 ]
