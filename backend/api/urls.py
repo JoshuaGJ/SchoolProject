@@ -1,5 +1,5 @@
 from django.urls import path
-from api.views import HistoricalPriceAnalyticsView, CropListView, MarketPriceSearchAPIView, RegisterUserView, TogglePinCropView, AgentMarketActionView, EmailLoginView
+from api.views import HistoricalPriceAnalyticsView, CropListView,UserProfileView, MarketPriceSearchAPIView, RegisterUserView, TogglePinCropView, AgentMarketActionView, EmailLoginView
 from  rest_framework_simplejwt.views import TokenRefreshView
 urlpatterns = [
     path('crops/', CropListView.as_view(), name='crop-list'),
@@ -11,6 +11,6 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/pin-crop/', TogglePinCropView.as_view(), name='user-pin-crop'),
     path('agent/market-action/', AgentMarketActionView.as_view(), name='agent-market-action'),
-    
+    path('auth/user-profile/', UserProfileView.as_view(), name='user-profile'),
     
 ]

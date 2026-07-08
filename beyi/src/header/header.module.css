@@ -1,0 +1,93 @@
+.globalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-color, #636663);
+  margin-bottom: 20px;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #10b981; /* Beyi Emerald Brand Color */
+  letter-spacing: -0.5px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.themeToggle {
+  background: transparent;
+  border: 1px solid var(--border-color, #e5e7eb);
+  font-size: 1.1rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.themeToggle:hover {
+  background-color: var(--bg-hover, #f3f4f6);
+}
+
+.authLinks {
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #10b981;
+}
+
+.profileMenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 20px;
+  transition: background-color 0.2s ease;
+}
+
+.profileMenu:hover {
+  background-color: var(--bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.headerUserName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.avatarPlaceholder {
+  width: 36px;
+  height: 36px;
+  background-color: #10b981;
+  color:  var(--text-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* 📱 Small Screens Optimization */
+@media (max-width: 520px) {
+  .headerUserName {
+    display: none; /* Safely strips text to keep layout intact on mobile rows */
+  }
+  
+  .profileMenu {
+    padding: 0;
+  }
+}

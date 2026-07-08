@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './searchdash.module.css';
 import { useTheme } from '../ThemeContext';
 import { fetchJson } from '../lib/api';
+import Header from '../header/Header.jsx'
 
 const formatPrice = (value) => {
   const numberValue = Number(value);
@@ -277,8 +278,10 @@ const handleTogglePin = async () => {
 
   return (
     <div className={styles.dashboardContainer}>
+
+      <Header />
       <header className={styles.dashboardHeader}>
-        <div className={styles.brand}>Beyi</div>
+       
         <div className={styles.searchContainer}>
           <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
             <input
@@ -299,12 +302,14 @@ const handleTogglePin = async () => {
             </p>
           )}
         </div>
+       {/*
         <div>
           <button onClick={toggleTheme} className={styles.themeToggle}>
             {isLightTheme ? '🌙' : '☀️'} {isLightTheme ? 'Dark' : 'Light'}
           </button>
           <Link to="/auth" className={styles.authLinks}>Login / Signup</Link>
         </div>
+        */}
       </header>
 
       <main className={styles.dashboardGrid}>

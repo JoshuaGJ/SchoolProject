@@ -4,6 +4,7 @@ import Login from "./login/login.jsx"
 import Dashboard from "./agentDashboard/dashboard.jsx"
 import Searchdash from "./searchdash/searchdash.jsx"
 import { ThemeProvider } from './ThemeContext';
+import ProfileDash from './profile/profileDash.jsx';
 function App() {
 
   return (
@@ -14,7 +15,7 @@ function App() {
           <Route path="/home" element={<Searchdash/>}/>
           <Route path="/login" element={<Login/>}/>
           <Route path="/signup" element={<SignupForm/>}/>
-          
+          <Route path="/profile" element={<ProfileDash/>}/>
           <Route path='/dash' element={<Dashboard/>}/>
           <Route path="*" element={<div>404 — Page not found</div>} />
         </Routes>

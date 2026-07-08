@@ -1,0 +1,423 @@
+.profileContainer {
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--bg-primary, #f9fafb);
+  color: var(--text-primary, #111827);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  margin-bottom: 30px;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #10b981; /* Emerald theme pop color */
+}
+
+.navLinks {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.backLink {
+  text-decoration: none;
+  color: var(--text-secondary, #4b5563);
+  font-size: 0.95rem;
+}
+
+.themeToggle {
+  background: transparent;
+  border: 1px solid var(--border-color, #e5e7eb);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 25px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .profileGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profileCard {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.fullWidthCard {
+  grid-column: 1 / -1;
+}
+
+.avatarCircle {
+  width: 80px;
+  height: 80px;
+  background-color: #10b981;
+  color: white;
+  font-size: 1.75rem;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.profileName {
+  margin: 0 0 8px 0;
+  font-size: 1.35rem;
+}
+
+.roleBadge {
+  align-self: flex-start;
+  background-color: #ecfdf5;
+  color: #065f46;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.mutedText {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  margin: 20px 0;
+}
+
+.logoutBtn {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logoutBtn:hover {
+  background-color: #fca5a5;
+}
+
+.cardTitle {
+  margin: 0 0 20px 0;
+  font-size: 1.15rem;
+  border-bottom: 2px solid #10b981;
+  padding-bottom: 6px;
+  align-self: flex-start;
+}
+
+.settingGroup {
+  margin-bottom: 20px;
+}
+
+.settingLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.inlineDisplayGroup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-input, #f3f4f6);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.editBtn, .saveBtn {
+  background: transparent;
+  border: 1px solid #10b981;
+  color: #10b981;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveBtn {
+  background-color: #10b981;
+  color: white;
+}
+
+.profileInput {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 6px;
+  margin-right: 10px;
+}
+
+.inlineEditGroup {
+  display: flex;
+}
+
+.watchlistTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  margin-top: 10px;
+}
+
+.watchlistTable th, .watchlistTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.boldText {
+  font-weight: 600;
+}
+
+.unpinActionBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #ef4444;
+}
+
+.unpinActionBtn:hover {
+  text-decoration: underline;
+}
+
+.profileContainer {
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--bg-primary, #f9fafb);
+  color: var(--text-primary, #111827);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  margin-bottom: 30px;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #10b981; /* Emerald theme pop color */
+}
+
+.navLinks {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.backLink {
+  text-decoration: none;
+  color: var(--text-secondary, #4b5563);
+  font-size: 0.95rem;
+}
+
+.themeToggle {
+  background: transparent;
+  border: 1px solid var(--border-color, #e5e7eb);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 25px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .profileGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profileCard {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.fullWidthCard {
+  grid-column: 1 / -1;
+}
+
+.avatarCircle {
+  width: 80px;
+  height: 80px;
+  background-color: #10b981;
+  color: white;
+  font-size: 1.75rem;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.profileName {
+  margin: 0 0 8px 0;
+  font-size: 1.35rem;
+}
+
+.roleBadge {
+  align-self: flex-start;
+  background-color: #ecfdf5;
+  color: #065f46;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.mutedText {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  margin: 20px 0;
+}
+
+.logoutBtn {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logoutBtn:hover {
+  background-color: #fca5a5;
+}
+
+.cardTitle {
+  margin: 0 0 20px 0;
+  font-size: 1.15rem;
+  border-bottom: 2px solid #10b981;
+  padding-bottom: 6px;
+  align-self: flex-start;
+}
+
+.settingGroup {
+  margin-bottom: 20px;
+}
+
+.settingLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.inlineDisplayGroup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-input, #f3f4f6);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.editBtn, .saveBtn {
+  background: transparent;
+  border: 1px solid #10b981;
+  color: #10b981;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveBtn {
+  background-color: #10b981;
+  color: white;
+}
+
+.profileInput {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 6px;
+  margin-right: 10px;
+}
+
+.inlineEditGroup {
+  display: flex;
+}
+
+.watchlistTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  margin-top: 10px;
+}
+
+.watchlistTable th, .watchlistTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.boldText {
+  font-weight: 600;
+}
+
+.unpinActionBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #ef4444;
+}
+
+.unpinActionBtn:hover {
+  text-decoration: underline;
+}

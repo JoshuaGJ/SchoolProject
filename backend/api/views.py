@@ -214,3 +214,17 @@ class AgentMarketActionView(APIView):
             }, status=status.HTTP_201_CREATED)
             
         return Response({"error": "Invalid action profile specification"}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated] # 🌟 Ensures request.user is populated via JWT
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'id': user.id,
+            'email': user.email,
+            # Handle standard Django first/last name or a custom profile full_name field
+            'full_name': f"{user.first_name} {user.last_name}".strip() or user.username,
+        })
