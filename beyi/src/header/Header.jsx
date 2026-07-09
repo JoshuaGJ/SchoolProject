@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
-import { useTheme } from '../ThemeContext';
+import { useTheme } from '../ThemeContext'; // 🌟 Importing your custom context hook
 import { fetchJson } from '../lib/api';
 
 const Header = () => {
-  const { isLightTheme, toggleTheme } = useTheme();
+  const { isLightTheme, toggleTheme } = useTheme(); // 🌟 Extracting global variables
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,45 +13,22 @@ const Header = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem('accessToken');
-      const cachedName = localStorage.getItem('userName') || localStorage.getItem('fullName') || '';
-      
       if (!token) {
-        if (cachedName) {
-          setUser({
-            name: cachedName,
-            initials: cachedName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
-          });
-        } else {
-          setUser(null);
-        }
+        setUser(null);
         setLoading(false);
         return;
       }
-
       try {
-        const data = await fetchJson('/auth/user-profile/');
-        
-        const resolvedName = data?.full_name || data?.fullName || data?.name || data?.username || cachedName;
-
-        if (resolvedName) {
+        const data = await fetchJson('/auth/user-profile/'); 
+        if (data && data.full_name) {
           setUser({
-            name: resolvedName,
-            initials: resolvedName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+            name: data.full_name,
+            initials: data.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
           });
-          localStorage.setItem('userName', resolvedName);
-        } else {
-          setUser({ name: 'User', initials: 'U' });
         }
       } catch (err) {
-        console.error("Failed to fetch verified user profile info:", err.message);
-        if (cachedName) {
-          setUser({
-            name: cachedName,
-            initials: cachedName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
-          });
-        } else {
-          setUser(null);
-        }
+        console.error("Header Profile Sync Error:", err.message);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -61,9 +38,9 @@ const Header = () => {
   }, []);
 
   return (
-    <header className={styles.globalHeader}>
+    <header className={`${styles.globalHeader} ${isLightTheme ? styles.lightMode : styles.darkMode}`}>
       {/* Left End: Brand Logo */}
-      <div className={styles.brand} onClick={() => navigate('/searchdash')}>
+      <div className={styles.brand} onClick={() => navigate('/landing')}>
         Beyi
       </div>
       
@@ -74,6 +51,7 @@ const Header = () => {
           className={styles.themeToggle}
           aria-label="Toggle visual interface theme"
         >
+          {/* 🌟 Dynamic Icon matching active state */}
           {isLightTheme ? '🌙' : '☀️'}
         </button>
 
@@ -87,7 +65,7 @@ const Header = () => {
             </div>
           </div>
         ) : (
-          <Link to="/login" className={styles.authLinks}>Login / Signup</Link>
+          <Link to="/auth" className={styles.authLinks}>Login / Signup</Link>
         )}
       </div>
     </header>

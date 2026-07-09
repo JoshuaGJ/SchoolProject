@@ -5,6 +5,7 @@ import Dashboard from "./agentDashboard/dashboard.jsx"
 import Searchdash from "./searchdash/searchdash.jsx"
 import { ThemeProvider } from './ThemeContext';
 import ProfileDash from './profile/profileDash.jsx';
+import Home from './home/home.jsx';
 function App() {
 
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/profile" element={<ProfileDash/>}/>
           <Route path='/dash' element={<Dashboard/>}/>
           <Route path="*" element={<div>404 — Page not found</div>} />
+          <Route path="/landing" element={<Home/>} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
