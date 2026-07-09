@@ -13,31 +13,45 @@ const Header = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem('accessToken');
+      const cachedName = localStorage.getItem('userName') || localStorage.getItem('fullName') || '';
       
       if (!token) {
-        setUser(null);
+        if (cachedName) {
+          setUser({
+            name: cachedName,
+            initials: cachedName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+          });
+        } else {
+          setUser(null);
+        }
         setLoading(false);
         return;
       }
 
       try {
-        // 🔄 Request user profile details from the backend securely
-        // Match this path to wherever your authenticated user endpoint lives
-        const data = await fetchJson('/auth/user-profile/'); 
+        const data = await fetchJson('/auth/user-profile/');
         
-        if (data && data.full_name) {
+        const resolvedName = data?.full_name || data?.fullName || data?.name || data?.username || cachedName;
+
+        if (resolvedName) {
           setUser({
-            name: data.full_name,
-            initials: data.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            name: resolvedName,
+            initials: resolvedName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
           });
+          localStorage.setItem('userName', resolvedName);
         } else {
-          // Fallback if full_name wasn't returned cleanly
           setUser({ name: 'User', initials: 'U' });
         }
       } catch (err) {
         console.error("Failed to fetch verified user profile info:", err.message);
-        // If the token is invalid/expired, log them out locally
-        setUser(null);
+        if (cachedName) {
+          setUser({
+            name: cachedName,
+            initials: cachedName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
+          });
+        } else {
+          setUser(null);
+        }
       } finally {
         setLoading(false);
       }

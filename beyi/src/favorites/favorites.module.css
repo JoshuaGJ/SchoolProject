@@ -1,0 +1,68 @@
+.favoriteToggle {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.6;
+}
+
+.favoriteToggle:hover {
+  transform: scale(1.15);
+  opacity: 1;
+}
+
+.favoriteToggleActive {
+  opacity: 1;
+  filter: drop-shadow(0 2px 4px rgba(163, 38, 38, 0.15));
+  color: red;
+}
+
+.favoriteListCard {
+  width: 100%;
+}
+
+.favoriteTitle {
+  margin: 0 0 20px 0;
+  font-size: 1.15rem;
+  border-bottom: 2px solid #10b981;
+  padding-bottom: 6px;
+  align-self: flex-start;
+}
+
+.favoriteMuted {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.95rem;
+}
+
+.favoriteTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  margin-top: 10px;
+}
+
+.favoriteTable th,
+.favoriteTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.favoriteBold {
+  font-weight: 600;
+}
+
+.favoriteUnpinBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #ef4444;
+}
+
+.favoriteUnpinBtn:hover {
+  text-decoration: underline;
+}

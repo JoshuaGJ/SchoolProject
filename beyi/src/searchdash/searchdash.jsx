@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './searchdash.module.css';
-import { useTheme } from '../ThemeContext';
 import { fetchJson } from '../lib/api';
 import Header from '../header/Header.jsx'
+import { FavoriteToggle } from '../favorites/Favorites.jsx';
 
 const formatPrice = (value) => {
   const numberValue = Number(value);
@@ -39,7 +38,6 @@ const formatRelativeTime = (timestamp) => {
 };
 
 const Searchdash = () => {
-  const { isLightTheme, toggleTheme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearchTerm, setActiveSearchTerm] = useState('');
   const [searchFeedback, setSearchFeedback] = useState('');
@@ -170,6 +168,7 @@ const Searchdash = () => {
     region: record.market?.region_location ?? '',
     village: record.market?.village ?? '',
     cropName: record.crop?.name ?? 'Unknown crop',
+    cropId: record.crop?.id ?? null,
     category: record.crop?.category ?? '',
     wholesalePrice: record.wholesale_price,
     retailPrice: record.retail_price,
@@ -240,42 +239,6 @@ const Searchdash = () => {
   const detailRecord = detail || null;
   const primaryCommodity = filteredMarketData[0];
 
-  // Add this with your other state hooks
-const [pinnedCommodityId, setPinnedCommodityId] = useState(() => {
-    return localStorage.getItem('pinnedCommodityId') || null;
-});
-
-// Check if the current primary commodity is the pinned one
-const isPinned = primaryCommodity && String(primaryCommodity.id) === String(pinnedCommodityId);
-
-// Toggle pin handler
-const handleTogglePin = async () => {
-    if (!primaryCommodity) return;
-
-    // Use the structural crop ID expected by your Django backend view
-    const targetCropId = primaryCommodity.cropId || primaryCommodity.id;
-
-    try {
-        // 1. Hit your TogglePinCropView API endpoint
-        const response = await fetchJson('/user/pin-crop/', {  // ⚠️ Match this to your exact urls.py path
-            method: 'POST',
-            body: JSON.stringify({ crop_id: targetCropId }),
-        });
-
-        // 2. Update local state based on the backend response string
-        if (response.status === 'pinned') {
-            setPinnedCommodityId(String(targetCropId));
-            localStorage.setItem('pinnedCommodityId', String(targetCropId));
-        } else if (response.status === 'unpinned') {
-            setPinnedCommodityId(null);
-            localStorage.removeItem('pinnedCommodityId');
-        }
-    } catch (err) {
-        console.error("Failed to sync pinned crop with server:", err.message);
-        // Fallback or alert user if token is bad/network dropped
-    }
-};
-
   return (
     <div className={styles.dashboardContainer}>
 
@@ -320,18 +283,13 @@ const handleTogglePin = async () => {
             <div>
               
             </div>
-            {/* ⭐ Pin / Like Button Toggle */}
-      {primaryCommodity && (
-        <button 
-          type="button" 
-          onClick={handleTogglePin}
-          className={`${styles.pinBtn} ${isPinned ? styles.pinBtnActive : ''}`}
-          title={isPinned ? "Unpin from dashboard" : "Pin commodity to top"}
-          aria-label={isPinned ? "Unpin commodity" : "Pin commodity"}
-        >
-          {isPinned ? '★' : '☆'}
-        </button>
-      )}
+            {primaryCommodity && (
+              <FavoriteToggle
+                cropId={primaryCommodity.cropId}
+                cropName={primaryCommodity.cropName}
+                className={styles.pinBtn}
+              />
+            )}
 
             <h2 className={styles.commodityTitle}>
               {primaryCommodity?.cropName || 

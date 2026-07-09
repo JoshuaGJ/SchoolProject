@@ -125,11 +125,13 @@ class EmailLoginView(APIView):
         refresh = RefreshToken.for_user(authenticated_user)
         role = 'agent' if hasattr(authenticated_user, 'agent_profile') else 'farmer'
         assigned_region = authenticated_user.agent_profile.assigned_region if role == 'agent' else ''
+        full_name = f"{authenticated_user.first_name} {authenticated_user.last_name}".strip() or authenticated_user.get_full_name().strip() or authenticated_user.username
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
             "role": role,
             "assigned_region": assigned_region,
+            "full_name": full_name,
         }, status=status.HTTP_200_OK)
 
 class TogglePinCropView(APIView):
@@ -150,6 +152,14 @@ class TogglePinCropView(APIView):
                 return Response({"status": "pinned", "message": f"Pinned {crop.name} to your feed."}, status=status.HTTP_200_OK)
         except Crop.DoesNotExist:
             return Response({"error": "Crop record not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserFavoritesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        pref, _ = UserPreference.objects.get_or_create(user=request.user)
+        return Response(UserPreferenceSerializer(pref).data, status=status.HTTP_200_OK)
 
 
 # 3. Agent Execution Actions Endpoint
@@ -219,12 +229,16 @@ class AgentMarketActionView(APIView):
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated] # 🌟 Ensures request.user is populated via JWT
-
+ 
     def get(self, request):
         user = request.user
+        role = 'Agent' if hasattr(user, 'agent_profile') else 'Farmer'
+        full_name = f"{user.first_name} {user.last_name}".strip() or user.get_full_name().strip() or user.username
         return Response({
             'id': user.id,
             'email': user.email,
-            # Handle standard Django first/last name or a custom profile full_name field
-            'full_name': f"{user.first_name} {user.last_name}".strip() or user.username,
+            'full_name': full_name,
+            'role': role,
+            'date_joined': user.date_joined.isoformat(),
+            'assigned_region': getattr(getattr(user, 'agent_profile', None), 'assigned_region', ''),
         })

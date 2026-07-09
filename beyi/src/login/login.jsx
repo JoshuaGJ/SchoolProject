@@ -23,6 +23,9 @@ function Login(){
 
             localStorage.setItem('accessToken', tokens.access);
             localStorage.setItem('refreshToken', tokens.refresh);
+            if (tokens.full_name) {
+                localStorage.setItem('userName', tokens.full_name);
+            }
             if (tokens.role === 'agent' && tokens.assigned_region) {
                 localStorage.setItem('agentAssignedRegion', tokens.assigned_region);
                 localStorage.setItem('agentMarketName', tokens.assigned_region);
