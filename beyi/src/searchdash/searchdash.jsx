@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './searchdash.module.css';
 import { fetchJson } from '../lib/api';
 import Header from '../header/Header.jsx'
@@ -43,6 +44,7 @@ const Searchdash = () => {
   const [searchFeedback, setSearchFeedback] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState(null);
+  const navigate = useNavigate();
   const [detail, setDetail] = useState(null);
   const popoverRef = useRef(null);
   const [priceRecords, setPriceRecords] = useState([]);
@@ -265,6 +267,10 @@ const Searchdash = () => {
             </p>
           )}
         </div>
+
+        <button type="button" className={styles.analyticsButton} onClick={() => navigate('/analytics')}>
+          View Analytics
+        </button>
        {/*
         <div>
           <button onClick={toggleTheme} className={styles.themeToggle}>

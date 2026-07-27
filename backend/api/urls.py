@@ -1,8 +1,9 @@
 from django.urls import path
-from api.views import HistoricalPriceAnalyticsView, CropListView,UserProfileView, MarketPriceSearchAPIView, RegisterUserView, TogglePinCropView, UserFavoritesView, AgentMarketActionView, EmailLoginView
+from api.views import AnalyticsOverviewView, HistoricalPriceAnalyticsView, CropListView,UserProfileView, MarketPriceSearchAPIView, RegisterUserView, TogglePinCropView, UserFavoritesView, AgentMarketActionView, EmailLoginView
 from  rest_framework_simplejwt.views import TokenRefreshView
 urlpatterns = [
     path('crops/', CropListView.as_view(), name='crop-list'),
+    path('analytics/', AnalyticsOverviewView.as_view(), name='analytics-overview'),
     path('prices/analytics/', HistoricalPriceAnalyticsView.as_view(), name='price-analytics'),
     path('prices/search/', MarketPriceSearchAPIView.as_view(), name='market-price-search'),
     # Auth & Customization Routes

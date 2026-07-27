@@ -1,0 +1,485 @@
+:root {
+  --analytics-bg: radial-gradient(circle at top left, rgba(16, 185, 129, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 22%),
+    linear-gradient(180deg, var(--bg-color), color-mix(in srgb, var(--bg-color) 84%, black));
+  --analytics-card: color-mix(in srgb, var(--card-bg) 96%, white 4%);
+  --analytics-border: color-mix(in srgb, var(--border-color) 80%, transparent);
+  --analytics-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+
+:global(.light-theme) .page {
+  --analytics-card: #ffffff;
+  --analytics-border: rgba(15, 23, 42, 0.08);
+  --analytics-shadow: 0 24px 50px rgba(15, 23, 42, 0.08);
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--analytics-bg);
+  color: var(--text-color);
+}
+
+.shell {
+  width: min(1400px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid var(--analytics-border);
+  border-radius: 28px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--analytics-card) 86%, transparent), var(--analytics-card));
+  box-shadow: var(--analytics-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.kicker {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.72rem;
+  color: var(--accent-color);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  max-width: 12ch;
+}
+
+.subtitle {
+  margin: 14px 0 0;
+  color: var(--muted-color);
+  max-width: 64ch;
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.heroNote {
+  color: var(--muted-color);
+  font-size: 0.9rem;
+}
+
+.primaryButton,
+.secondaryButton,
+.switchButton {
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 14px;
+  font-weight: 700;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.primaryButton {
+  background: var(--accent-color);
+  color: var(--button-text);
+  padding: 14px 18px;
+  box-shadow: 0 14px 28px rgba(16, 185, 129, 0.2);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--text-color);
+  border-color: var(--analytics-border);
+  padding: 12px 16px;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.switchButton:hover {
+  transform: translateY(-1px);
+}
+
+.primaryButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.kpiCard,
+.chartCard,
+.sideCard,
+.chipPanel,
+.filterBar,
+.errorBanner {
+  border: 1px solid var(--analytics-border);
+  background: var(--analytics-card);
+  border-radius: 24px;
+  box-shadow: var(--analytics-shadow);
+}
+
+.kpiCard {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kpiLabel,
+.sectionEyebrow,
+.switchLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted-color);
+}
+
+.kpiValue {
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+}
+
+.kpiMeta {
+  margin: 0;
+  color: var(--muted-color);
+  line-height: 1.55;
+}
+
+.filterBar {
+  margin-top: 18px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr;
+  gap: 14px;
+  align-items: end;
+  position: sticky;
+  top: 16px;
+  z-index: 25;
+  backdrop-filter: blur(18px);
+}
+
+.filterField,
+.switchGroup,
+.timeframeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filterField label {
+  font-size: 0.8rem;
+  color: var(--muted-color);
+}
+
+.filterInput {
+  width: 100%;
+  background: color-mix(in srgb, var(--bg-color) 94%, white 6%);
+  color: var(--text-color);
+  border: 1px solid var(--analytics-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.filterInput:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.switchButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.switchButton {
+  padding: 11px 14px;
+  background: transparent;
+  color: var(--text-color);
+  border-color: var(--analytics-border);
+}
+
+.switchButtonActive {
+  background: var(--accent-color);
+  color: var(--button-text);
+  border-color: var(--accent-color);
+}
+
+.errorBanner {
+  margin-top: 18px;
+  padding: 16px 18px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(320px, 0.95fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.chartCard,
+.sideCard,
+.chipPanel {
+  padding: 22px;
+}
+
+.sectionHeader,
+.sectionHeaderCompact {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.sectionTitle {
+  margin: 8px 0 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.sectionHint {
+  margin: 0;
+  color: var(--muted-color);
+  max-width: 28ch;
+  line-height: 1.55;
+}
+
+.chartStage {
+  height: 420px;
+  margin-top: 18px;
+}
+
+.loadingState,
+.emptyState,
+.tableEmpty,
+.chipGhost {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--muted-color);
+  border: 1px dashed var(--analytics-border);
+  border-radius: 20px;
+}
+
+.tooltipCard {
+  min-width: 220px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--analytics-border);
+  box-shadow: var(--analytics-shadow);
+  color: var(--text-color);
+}
+
+.tooltipCard strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.tooltipCard span {
+  display: block;
+  color: var(--muted-color);
+  margin-bottom: 10px;
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.comparePills,
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.comparePill,
+.chip,
+.comparePillMuted {
+  border-radius: 999px;
+  padding: 9px 12px;
+  border: 1px solid var(--analytics-border);
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+  color: var(--text-color);
+}
+
+.comparePillMuted {
+  color: var(--muted-color);
+}
+
+.sideStack {
+  display: grid;
+  gap: 16px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 14px;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dataTable thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--muted-color);
+  text-transform: uppercase;
+  padding-bottom: 10px;
+}
+
+.dataTable td {
+  padding: 14px 0;
+  border-top: 1px solid var(--analytics-border);
+  vertical-align: top;
+}
+
+.dataTable td strong,
+.rankRow strong,
+.seasonHeader strong {
+  display: block;
+}
+
+.dataTable td span,
+.rankRow span,
+.seasonHeader span,
+.seasonRow small {
+  display: block;
+  color: var(--muted-color);
+  margin-top: 4px;
+}
+
+.listStack {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.rankRow,
+.seasonRow {
+  padding: 14px;
+  border: 1px solid var(--analytics-border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-color) 92%, transparent);
+}
+
+.rankRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.seasonHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.progressTrack {
+  margin: 12px 0 8px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 65%, transparent);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-color), #38bdf8);
+}
+
+.inlineComposer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.inlineComposer .filterInput {
+  flex: 1;
+}
+
+.chip {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip:hover,
+.secondaryButton:hover,
+.switchButton:hover,
+.primaryButton:hover {
+  filter: brightness(1.03);
+}
+
+.chip span {
+  color: var(--accent-color);
+  font-weight: 800;
+}
+
+@media (max-width: 1180px) {
+  .kpiGrid,
+  .filterBar,
+  .chartGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroActions {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 820px) {
+  .shell {
+    width: min(100% - 20px, 1400px);
+    padding-top: 18px;
+  }
+
+  .kpiGrid,
+  .filterBar,
+  .chartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterBar {
+    position: static;
+  }
+
+  .chartStage {
+    height: 320px;
+  }
+
+  .inlineComposer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

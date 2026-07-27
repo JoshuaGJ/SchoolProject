@@ -33,6 +33,9 @@ const Home = () => {
             <button onClick={() => navigate('/home')} className={styles.secondaryCta}>
               Explore Live Prices
             </button>
+            <button onClick={() => navigate('/analytics')} className={styles.secondaryCta}>
+              View Analytics
+            </button>
           </div>
         </div>
 

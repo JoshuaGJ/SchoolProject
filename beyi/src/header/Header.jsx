@@ -58,14 +58,20 @@ const Header = () => {
         {loading ? (
           <div className={styles.avatarLoading}>⏳</div>
         ) : user ? (
-          <div className={styles.profileMenu} onClick={() => navigate('/profile')}>
-            <span className={styles.headerUserName}>{user.name}</span>
-            <div className={styles.avatarPlaceholder} title="View Profile">
-              {user.initials}
+          <>
+            <Link to="/analytics" className={styles.authLinks}>Analytics</Link>
+            <div className={styles.profileMenu} onClick={() => navigate('/profile')}>
+              <span className={styles.headerUserName}>{user.name}</span>
+              <div className={styles.avatarPlaceholder} title="View Profile">
+                {user.initials}
+              </div>
             </div>
-          </div>
+          </>
         ) : (
-          <Link to="/auth" className={styles.authLinks}>Login / Signup</Link>
+          <>
+            <Link to="/analytics" className={styles.authLinks}>Analytics</Link>
+            <Link to="/auth" className={styles.authLinks}>Login / Signup</Link>
+          </>
         )}
       </div>
     </header>
