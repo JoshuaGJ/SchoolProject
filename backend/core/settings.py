@@ -155,3 +155,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Limit to 10 results per page
 }
+
+# settings.py
+
+SIMPLE_JWT = {
+    # Set your desired access token lifetime here
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # e.g., 60 minutes, 1 day, etc.
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Keep refresh token lifetime longer than access token
+
+    # Other standard settings...
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACK_LIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
