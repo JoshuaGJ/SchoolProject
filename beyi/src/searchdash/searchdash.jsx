@@ -437,7 +437,7 @@ const Searchdash = () => {
             </h3>
             <ul className={styles.listItems}>
               {!loading && !error && limitedNearbyMarkets.map((market) => (
-                <li key={`${market.name}-${market.district}`} className={styles.marketListItem}>
+                <li key={market.id} className={styles.marketListItem}>
                   <a onClick={() => setDetail(market)} className={styles.marketLink}>
                     <h4>
                       {market.name}

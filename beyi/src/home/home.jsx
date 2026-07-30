@@ -1,10 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './home.module.css';
-import Header from '../Header/Header';
+import Header from '../header/Header.jsx';
+import { fetchJson } from '../lib/api';
+
+const formatUSh = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return 'USh 0';
+  }
+
+  const numberValue = Number(value);
+  if (Number.isNaN(numberValue)) {
+    return `USh ${value}`;
+  }
+
+  return `USh ${numberValue.toLocaleString()}`;
+};
 
 const Home = () => {
   const navigate = useNavigate();
+  const [snapshot, setSnapshot] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSnapshot = async () => {
+      try {
+        const data = await fetchJson('/analytics/?timeframe=3M&price_type=both');
+        if (active) {
+          setSnapshot(data);
+        }
+      } catch (error) {
+        if (active) {
+          setSnapshot({ error: true });
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSnapshot();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const commodityName = snapshot?.chart?.crops?.[0] || snapshot?.kpis?.highest_price_surge?.crop || 'Market basket';
+  const marketName = snapshot?.kpis?.most_affordable_hub?.market_name || 'Regional hub';
+  const wholesaleValue = snapshot?.kpis?.most_affordable_hub?.average_wholesale ?? snapshot?.kpis?.highest_price_surge?.latest_price;
+  const trendValue = snapshot?.kpis?.highest_price_surge?.percentage_change;
+  const trendDirection = trendValue === undefined || trendValue === null ? null : (trendValue >= 0 ? 'up' : 'down');
 
   return (
     <div className={styles.landingContainer}>
@@ -44,18 +93,27 @@ const Home = () => {
           <h3 className={styles.widgetTitle}>Quick Price Checker</h3>
           <div className={styles.widgetRow}>
             <label className={styles.widgetLabel}>Commodity Index</label>
-            <input type="text" value="Matooke (Extra Quality / Large Bunch)" readOnly className={styles.widgetInput} />
+            <input type="text" value={loading ? 'Loading initial analytics…' : commodityName} readOnly className={styles.widgetInput} />
           </div>
           <div className={styles.widgetRow}>
             <label className={styles.widgetLabel}>Tracked Market Location</label>
-            <input type="text" value="Kalerwe Market, Kampala" readOnly className={styles.widgetInput} />
+            <input type="text" value={loading ? 'Loading market data…' : marketName} readOnly className={styles.widgetInput} />
           </div>
           <div className={styles.priceDisplay}>
             <span className={styles.priceLabel}>Current Average Wholesale Value</span>
-            <h2 className={styles.actualPrice}>USh 25,000 <small>/ Bunch</small></h2>
+            <h2 className={styles.actualPrice}>{loading ? 'Loading…' : `${formatUSh(wholesaleValue)} `}<small>/ Bunch</small></h2>
           </div>
           <div className={styles.trendIndicator}>
-            <span className={styles.upTrend}>▲ +4.2%</span> index variation from last week
+            {loading ? (
+              <span className={styles.upTrend}>Loading trend…</span>
+            ) : (
+              <>
+                <span className={trendDirection === 'up' ? styles.upTrend : styles.downTrend}>
+                  {trendDirection === 'up' ? '▲' : '▼'} {trendValue !== null && trendValue !== undefined ? `${Math.abs(trendValue)}%` : 'No data'}
+                </span>{' '}
+                index variation from last week
+              </>
+            )}
           </div>
         </div>
       </section>

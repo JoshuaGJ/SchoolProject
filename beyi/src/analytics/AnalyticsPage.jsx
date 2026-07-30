@@ -1,19 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Area,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import React, { useEffect, useMemo, useState } from 'react';
 import Header from '../header/Header.jsx';
 import { fetchJson } from '../lib/api';
+import PriceTrendChart from './PriceTrendChart.jsx';
 import styles from './analytics.module.css';
 
 const TIMEFRAME_OPTIONS = [
@@ -31,28 +19,16 @@ const PRICE_TYPE_OPTIONS = [
 ];
 
 const formatUSh = (value) => {
-  if (value === null || value === undefined || value === '') {
-    return 'USh 0';
-  }
-
+  if (value === null || value === undefined || value === '') return 'USh 0';
   const numberValue = Number(value);
-  if (Number.isNaN(numberValue)) {
-    return `USh ${value}`;
-  }
-
+  if (Number.isNaN(numberValue)) return `USh ${value}`;
   return `USh ${numberValue.toLocaleString()}`;
 };
 
 const formatDateLabel = (value) => {
-  if (!value) {
-    return 'Unknown period';
-  }
-
+  if (!value) return 'Unknown period';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
+  if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('en-UG', {
     month: 'short',
     day: 'numeric',
@@ -62,16 +38,29 @@ const formatDateLabel = (value) => {
 
 const slugify = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
+const getTimeframeWindowDays = (timeframe) => {
+  const mapping = {
+    '1M': 30,
+    '3M': 90,
+    '6M': 180,
+    '1Y': 365,
+    '5Y': 1825,
+  };
+
+  return mapping[timeframe] ?? 90;
+};
+
 const buildCsv = (rows) => {
-  const header = ['period', 'crop', 'wholesale_price', 'retail_price', 'market_name', 'record_count'];
+  const header = ['timestamp', 'crop', 'category', 'wholesale_price', 'retail_price', 'market_name', 'region'];
   const lines = rows.map((row) => [
-    row.period ?? '',
-    row['crop__name'] ?? '',
-    row.wholesale_price ?? '',
-    row.retail_price ?? '',
-    row.market_name ?? '',
-    row.record_count ?? '',
-  ].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','));
+    row.timestamp ?? '',
+    row.cropName ?? '',
+    row.category ?? '',
+    row.wholesalePrice ?? '',
+    row.retailPrice ?? '',
+    row.marketName ?? '',
+    row.region ?? '',
+  ].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','));
 
   return [header.join(','), ...lines].join('\n');
 };
@@ -86,135 +75,216 @@ const downloadCsv = (filename, rows) => {
   URL.revokeObjectURL(url);
 };
 
-const buildChartData = (rows) => {
+const buildChartData = (records, displayCrops = []) => {
   const periodMap = new Map();
+  const selectedCropKeys = new Set((displayCrops || []).map((cropName) => slugify(cropName || '')));
 
-  rows.forEach((row) => {
-    const periodKey = row.period;
-    const cropName = row['crop__name'];
-    const cropKey = slugify(cropName);
+  records.forEach((record) => {
+    const periodKey = record.timestamp ? record.timestamp.split('T')[0] : 'Unknown';
+    const cropName = record.cropName;
+    const cropKey = slugify(cropName || '');
     const current = periodMap.get(periodKey) || {
       period: periodKey,
       label: formatDateLabel(periodKey),
     };
 
-    current[`${cropKey}_wholesale`] = row.wholesale_price;
-    current[`${cropKey}_retail`] = row.retail_price;
+    if (cropKey && (!displayCrops?.length || selectedCropKeys.has(cropKey))) {
+      current[`${cropKey}_wholesale`] = Number(record.wholesalePrice) || null;
+      current[`${cropKey}_retail`] = Number(record.retailPrice) || null;
+    }
     periodMap.set(periodKey, current);
   });
 
   return Array.from(periodMap.values()).sort((left, right) => new Date(left.period) - new Date(right.period));
 };
 
-const formatRatio = (ratio) => {
-  if (ratio === null || ratio === undefined) {
-    return 0;
-  }
+const CustomTooltip = ({ active, payload, label, tooltipMarketLabel }) => {
+  if (!active || !payload?.length) return null;
 
-  return Math.max(0, Math.min(100, Math.round(ratio * 100)));
+  return (
+    <div className={styles.tooltipCard}>
+      <strong>{label}</strong>
+      <span>{tooltipMarketLabel}</span>
+      {payload.map((entry) => (
+        <div key={entry.dataKey} className={styles.tooltipRow}>
+          <span>{entry.name}</span>
+          <strong>{formatUSh(entry.value)}</strong>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const AnalyticsPage = () => {
-  const [analytics, setAnalytics] = useState(null);
+  // State from new logic
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [searchFeedback, setSearchFeedback] = useState('');
+  const [priceRecords, setPriceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // UI Filter Controls
   const [timeframe, setTimeframe] = useState('3M');
   const [priceType, setPriceType] = useState('both');
-  const [selectedCrop, setSelectedCrop] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedMarket, setSelectedMarket] = useState('');
   const [compareCrops, setCompareCrops] = useState([]);
-  const [cropInput, setCropInput] = useState('');
-  const [regionInput, setRegionInput] = useState('');
-  const [marketInput, setMarketInput] = useState('');
   const [compareInput, setCompareInput] = useState('');
 
-  useEffect(() => {
-    let active = true;
+  // 1. Core Data Fetching Function (/prices/search/ endpoint)
+  const loadAnalyticsData = async (searchQuery = '', signal) => {
+    try {
+      setLoading(true);
+      setError('');
 
-    const loadAnalytics = async () => {
-      try {
-        setLoading(true);
-        setError('');
+      const url = searchQuery 
+        ? `/prices/search/?search=${encodeURIComponent(searchQuery)}` 
+        : '/prices/search/';
 
-        const params = new URLSearchParams();
-        params.set('timeframe', timeframe);
-        params.set('price_type', priceType);
-
-        if (selectedCrop) {
-          params.set('crop', selectedCrop);
-          params.set('arbitrage_crop', selectedCrop);
-        }
-
-        if (selectedRegion) {
-          params.set('region', selectedRegion);
-        }
-
-        if (selectedMarket) {
-          params.set('market', selectedMarket);
-        }
-
-        if (compareCrops.length) {
-          params.set('compare_crops', compareCrops.join(','));
-        }
-
-        const data = await fetchJson(`/analytics/?${params.toString()}`);
-
-        if (!active) {
-          return;
-        }
-
-        setAnalytics(data);
-
-        if (!selectedCrop && data?.filters?.selected_crop) {
-          setSelectedCrop(data.filters.selected_crop);
-          setCropInput(data.filters.selected_crop);
-        }
-      } catch (requestError) {
-        if (active) {
-          setError(requestError.message || 'Unable to load analytics data.');
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+      const data = await fetchJson(url, { signal });
+      
+      let recordsArray = [];
+      if (Array.isArray(data)) {
+        recordsArray = data;
+      } else if (data && Array.isArray(data.results)) {
+        recordsArray = data.results;
       }
-    };
 
-    loadAnalytics();
+      setPriceRecords(recordsArray);
 
-    return () => {
-      active = false;
-    };
-  }, [timeframe, priceType, selectedCrop, selectedRegion, selectedMarket, compareCrops]);
+      const count = recordsArray.length;
+      if (searchQuery && count === 0) {
+        setSearchFeedback(`No analytics data found for "${searchQuery}".`);
+      } else if (searchQuery) {
+        setSearchFeedback(`Showing analytics for ${count} record${count !== 1 ? 's' : ''} matching "${searchQuery}".`);
+      } else {
+        setSearchFeedback('Showing overall market analytics.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching analytics data:', err);
+        setError(err.message || 'Failed to load analytics data.');
+        setPriceRecords([]);
+        setSearchFeedback('❌ Failed to load data.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const availableCrops = analytics?.filters?.available_crops || [];
-  const availableRegions = analytics?.filters?.available_regions || [];
-  const availableMarkets = analytics?.filters?.available_markets || [];
-  const chartRows = analytics?.chart?.rows || [];
-  const chartData = buildChartData(chartRows);
-  const displayCrops = compareCrops.length ? compareCrops : (analytics?.chart?.crops || []);
-  const primaryCropName = selectedCrop || analytics?.filters?.selected_crop || displayCrops[0] || '';
-  const primaryCropKey = primaryCropName ? slugify(primaryCropName) : '';
+  // 2. Initial Mount Effect
+  useEffect(() => {
+    const controller = new AbortController();
+    loadAnalyticsData('', controller.signal);
+    return () => controller.abort();
+  }, []);
 
-  const filteredCropOptions = availableCrops.filter((crop) =>
-    crop.name.toLowerCase().includes(cropInput.toLowerCase())
-  );
+  // 3. Normalized Records Structure
+  const normalizedRecords = useMemo(() => {
+    return priceRecords.map((record) => ({
+      id: record.id,
+      marketName: record.market?.name ?? 'Unknown market',
+      region: record.market?.region_location ?? '',
+      village: record.market?.village ?? '',
+      cropName: record.crop?.name ?? 'Unknown crop',
+      cropId: record.crop?.id ?? null,
+      category: record.crop?.category ?? '',
+      wholesalePrice: Number(record.wholesale_price) || 0,
+      retailPrice: Number(record.retail_price) || 0,
+      timestamp: record.timestamp,
+    }));
+  }, [priceRecords]);
 
-  const filteredRegionOptions = availableRegions.filter((region) =>
-    region.toLowerCase().includes(regionInput.toLowerCase())
-  );
+  // 4. Composite Deduplication (Latest Record per Market/Crop pair)
+  const latestAnalyticsRecords = useMemo(() => {
+    return Array.from(
+      normalizedRecords.reduce((map, record) => {
+        const compositeKey = `${record.marketName}-${record.cropName}`;
+        const existing = map.get(compositeKey);
+        if (!existing || new Date(record.timestamp).getTime() > new Date(existing.timestamp).getTime()) {
+          map.set(compositeKey, record);
+        }
+        return map;
+      }, new Map()).values()
+    );
+  }, [normalizedRecords]);
 
-  const filteredMarketOptions = availableMarkets.filter((market) =>
-    [market.name, market.region_location].join(' ').toLowerCase().includes(marketInput.toLowerCase())
-  );
+  // 5. Multi-field Client-side Filter
+  const filteredAnalytics = useMemo(() => {
+    const lower = activeSearchTerm.toLowerCase();
+    if (!lower) return latestAnalyticsRecords;
 
+    return latestAnalyticsRecords.filter((record) =>
+      [record.cropName, record.category, record.marketName, record.region, record.village]
+        .join(' ')
+        .toLowerCase()
+        .includes(lower)
+    );
+  }, [latestAnalyticsRecords, activeSearchTerm]);
+
+  const chartRecords = useMemo(() => {
+    const lower = activeSearchTerm.trim().toLowerCase();
+    const compareTerms = compareCrops.map((crop) => crop.trim().toLowerCase()).filter(Boolean);
+    const searchTerms = [...new Set([lower, ...compareTerms].filter(Boolean))];
+    const latestDate = normalizedRecords.reduce((latest, record) => {
+      if (!record.timestamp) return latest;
+      const dateValue = new Date(record.timestamp);
+      if (Number.isNaN(dateValue.getTime())) return latest;
+      return dateValue.getTime() > latest ? dateValue.getTime() : latest;
+    }, 0);
+
+    const cutoffDate = latestDate
+      ? new Date(latestDate - getTimeframeWindowDays(timeframe) * 24 * 60 * 60 * 1000)
+      : null;
+
+    return normalizedRecords.filter((record) => {
+      if (!record.timestamp) return false;
+
+      const recordDate = new Date(record.timestamp);
+      if (cutoffDate && !Number.isNaN(recordDate.getTime()) && recordDate.getTime() < cutoffDate.getTime()) {
+        return false;
+      }
+
+      if (!searchTerms.length) return true;
+
+      const haystack = [record.cropName, record.category, record.marketName, record.region, record.village]
+        .join(' ')
+        .toLowerCase();
+
+      return searchTerms.some((term) => {
+        const cropNameMatch = record.cropName.toLowerCase().includes(term);
+        return cropNameMatch || haystack.includes(term);
+      });
+    });
+  }, [normalizedRecords, activeSearchTerm, compareCrops, timeframe]);
+
+  // Available crops list for suggestions/datalists
+  const availableCrops = useMemo(() => {
+    const cropSet = new Set(normalizedRecords.map((r) => r.cropName));
+    return Array.from(cropSet).filter(Boolean);
+  }, [normalizedRecords]);
+
+  // Search Handler
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const query = searchTerm.trim();
+    setActiveSearchTerm(query);
+    loadAnalyticsData(query);
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setActiveSearchTerm('');
+    setTimeframe('3M');
+    setPriceType('both');
+    setCompareCrops([]);
+    setCompareInput('');
+    loadAnalyticsData('');
+  };
+
+  // Compare overlay handlers
   const addCompareCrop = (nextCrop) => {
     const normalizedCrop = nextCrop.trim();
-    if (!normalizedCrop || compareCrops.includes(normalizedCrop)) {
-      return;
-    }
-
+    if (!normalizedCrop || compareCrops.includes(normalizedCrop)) return;
     setCompareCrops((current) => [...current, normalizedCrop].slice(0, 4));
     setCompareInput('');
   };
@@ -223,16 +293,90 @@ const AnalyticsPage = () => {
     setCompareCrops((current) => current.filter((crop) => crop !== cropName));
   };
 
-  const exportCurrentView = () => {
-    if (!chartRows.length) {
-      return;
+  // Display Crops configuration for Charting
+  const displayCrops = useMemo(() => {
+    const chartCropNames = Array.from(new Set(chartRecords.map((record) => record.cropName).filter(Boolean)));
+    const nextCrops = [];
+
+    if (compareCrops.length) {
+      compareCrops.forEach((crop) => {
+        const trimmedCrop = crop.trim();
+        if (!trimmedCrop) return;
+
+        const exactMatch = chartCropNames.find((candidate) => candidate.toLowerCase() === trimmedCrop.toLowerCase());
+        const resolvedCrop = exactMatch || trimmedCrop;
+        if (!nextCrops.includes(resolvedCrop)) {
+          nextCrops.push(resolvedCrop);
+        }
+      });
     }
 
-    downloadCsv(`beyi-analytics-${timeframe.toLowerCase()}.csv`, chartRows);
+    if (activeSearchTerm.trim()) {
+      const normalisedSearch = activeSearchTerm.trim().toLowerCase();
+      const exactMatch = chartCropNames.find((cropName) => cropName.toLowerCase() === normalisedSearch);
+      const partialMatch = chartCropNames.find((cropName) => cropName.toLowerCase().includes(normalisedSearch));
+      const primaryCrop = exactMatch || partialMatch;
+      if (primaryCrop && !nextCrops.includes(primaryCrop)) {
+        nextCrops.unshift(primaryCrop);
+      }
+    }
+
+    if (!nextCrops.length) {
+      const topCrop = chartCropNames[0];
+      if (topCrop) nextCrops.push(topCrop);
+    }
+
+    return nextCrops;
+  }, [compareCrops, activeSearchTerm, chartRecords]);
+
+  const primaryCropName = displayCrops[0] || '';
+  const chartData = useMemo(() => buildChartData(chartRecords, displayCrops), [chartRecords, displayCrops]);
+
+  // KPI Calculations
+  const kpis = useMemo(() => {
+    if (!filteredAnalytics.length) return null;
+
+    const totalTracked = filteredAnalytics.length;
+    
+    // Average Retail Calculation
+    const totalRetail = filteredAnalytics.reduce((sum, r) => sum + r.retailPrice, 0);
+    const avgRetail = (totalRetail / totalTracked) || 0;
+
+    // Most Affordable Hub
+    const sortedByWholesale = [...filteredAnalytics].sort((a, b) => a.wholesalePrice - b.wholesalePrice);
+    const cheapestHub = sortedByWholesale[0];
+
+    return {
+      totalTracked,
+      avgRetail,
+      cheapestHub,
+    };
+  }, [filteredAnalytics]);
+
+  const exportCurrentView = () => {
+    if (!filteredAnalytics.length) return;
+    downloadCsv(`beyi-analytics-${timeframe.toLowerCase()}.csv`, filteredAnalytics);
   };
 
   const resolveMetricKey = (cropName, metric) => `${slugify(cropName)}_${metric}`;
-  const tooltipMarketLabel = selectedMarket || selectedRegion || 'Filtered market basket';
+  const tooltipMarketLabel = activeSearchTerm || 'Filtered market snapshot';
+
+  const renderTooltip = ({ active, payload, label }) => (
+    <CustomTooltip active={active} payload={payload} label={label} tooltipMarketLabel={tooltipMarketLabel} />
+  );
+
+  const activeFilterTags = useMemo(() => {
+    const tags = [];
+    if (activeSearchTerm) tags.push({ id: 'search', label: `Filter: ${activeSearchTerm}` });
+    if (timeframe !== '3M') tags.push({ id: 'timeframe', label: `Timeframe: ${timeframe}` });
+    if (priceType !== 'both') tags.push({ id: 'priceType', label: `Price type: ${priceType}` });
+    if (compareCrops.length) tags.push({ id: 'compare', label: `Compare: ${compareCrops.join(', ')}` });
+    return tags;
+  }, [activeSearchTerm, timeframe, priceType, compareCrops]);
+
+  const hasActiveFilters = Boolean(
+    activeSearchTerm || compareCrops.length || timeframe !== '3M' || priceType !== 'both'
+  );
 
   return (
     <div className={styles.page}>
@@ -249,123 +393,85 @@ const AnalyticsPage = () => {
           </div>
 
           <div className={styles.heroActions}>
-            <button type="button" onClick={exportCurrentView} className={styles.primaryButton} disabled={!chartRows.length}>
+            <button
+              type="button"
+              onClick={exportCurrentView}
+              className={styles.primaryButton}
+              disabled={!filteredAnalytics.length || loading}
+              aria-label="Export the current analytics view as a CSV file"
+            >
               Export CSV
             </button>
             <span className={styles.heroNote}>Live insights update as filters change.</span>
           </div>
         </section>
 
+        {/* KPI CARDS */}
         <section className={styles.kpiGrid}>
           <article className={styles.kpiCard}>
-            <span className={styles.kpiLabel}>Highest Price Surge</span>
-            <strong className={styles.kpiValue}>{analytics?.kpis?.highest_price_surge?.crop || '—'}</strong>
-            <p className={styles.kpiMeta}>
-              {analytics?.kpis?.highest_price_surge
-                ? `${analytics.kpis.highest_price_surge.percentage_change}% in the last 7 days`
-                : 'Waiting for enough data to calculate movement.'}
-            </p>
+            <span className={styles.kpiLabel}>Average Retail Price</span>
+            <strong className={styles.kpiValue}>
+              {kpis ? formatUSh(kpis.avgRetail.toFixed(0)) : '—'}
+            </strong>
+            <p className={styles.kpiMeta}>Calculated across current active filter dataset.</p>
           </article>
 
           <article className={styles.kpiCard}>
             <span className={styles.kpiLabel}>Most Affordable Hub</span>
             <strong className={styles.kpiValue}>
-              {analytics?.kpis?.most_affordable_hub?.market_name || '—'}
+              {kpis?.cheapestHub?.marketName || '—'}
             </strong>
             <p className={styles.kpiMeta}>
-              {analytics?.kpis?.most_affordable_hub
-                ? `${analytics.kpis.most_affordable_hub.region_location} · ${formatUSh(analytics.kpis.most_affordable_hub.average_wholesale)}`
-                : 'Comparing staple markets across the active filter set.'}
+              {kpis?.cheapestHub
+                ? `${kpis.cheapestHub.region} · ${formatUSh(kpis.cheapestHub.wholesalePrice)} wholesale`
+                : 'Comparing market prices across active filters.'}
             </p>
           </article>
 
           <article className={styles.kpiCard}>
-            <span className={styles.kpiLabel}>Price Stability Indicator</span>
-            <strong className={styles.kpiValue}>{analytics?.kpis?.price_stability?.crop || '—'}</strong>
-            <p className={styles.kpiMeta}>
-              {analytics?.kpis?.price_stability
-                ? `${analytics.kpis.price_stability.price_range} shilling spread across the last 30 days`
-                : 'No stability signal yet.'}
-            </p>
+            <span className={styles.kpiLabel}>Primary Tracked Crop</span>
+            <strong className={styles.kpiValue}>{primaryCropName || '—'}</strong>
+            <p className={styles.kpiMeta}>Base commodity currently rendered in analytics view.</p>
           </article>
 
           <article className={styles.kpiCard}>
             <span className={styles.kpiLabel}>Total Tracked Entries</span>
-            <strong className={styles.kpiValue}>{analytics?.kpis?.total_tracked_entries ?? 0}</strong>
-            <p className={styles.kpiMeta}>Rows included in the current filtered analytics view.</p>
+            <strong className={styles.kpiValue}>{kpis?.totalTracked ?? 0}</strong>
+            <p className={styles.kpiMeta}>Deduplicated market records in current view.</p>
           </article>
         </section>
 
-        <section className={styles.filterBar}>
-          <div className={styles.filterField}>
-            <label htmlFor="crop-filter">Crop / Commodity</label>
-            <input
-              id="crop-filter"
-              list="crop-options"
-              className={styles.filterInput}
-              value={cropInput}
-              onChange={(event) => setCropInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  setSelectedCrop(cropInput.trim());
-                }
-              }}
-              placeholder="Search crops and press Enter"
-            />
+        {/* SEARCH & FILTER BAR */}
+        <section className={styles.filterBar} aria-label="Analytics filters">
+          <form onSubmit={handleSearchSubmit} className={styles.filterField}>
+            <label htmlFor="crop-filter">Search Market Data</label>
+            <div className={styles.inputWithSpinner}>
+              <input
+                id="crop-filter"
+                list="crop-options"
+                className={styles.filterInput}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search crop, category, market, or district..."
+                aria-label="Filter analytics by crop or region"
+              />
+              <button
+                type="submit"
+                className={styles.secondaryButton}
+                disabled={loading}
+                aria-label="Search analytics"
+              >
+                Search
+              </button>
+            </div>
             <datalist id="crop-options">
-              {filteredCropOptions.map((crop) => (
-                <option key={crop.id} value={crop.name} label={crop.category} />
+              {availableCrops.map((cropName, idx) => (
+                <option key={`${cropName}-${idx}`} value={cropName} />
               ))}
             </datalist>
-          </div>
+          </form>
 
-          <div className={styles.filterField}>
-            <label htmlFor="region-filter">Region / District</label>
-            <input
-              id="region-filter"
-              list="region-options"
-              className={styles.filterInput}
-              value={regionInput}
-              onChange={(event) => setRegionInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  setSelectedRegion(regionInput.trim());
-                }
-              }}
-              placeholder="Filter by region"
-            />
-            <datalist id="region-options">
-              {filteredRegionOptions.map((region) => (
-                <option key={region} value={region} />
-              ))}
-            </datalist>
-          </div>
-
-          <div className={styles.filterField}>
-            <label htmlFor="market-filter">Market</label>
-            <input
-              id="market-filter"
-              list="market-options"
-              className={styles.filterInput}
-              value={marketInput}
-              onChange={(event) => setMarketInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  setSelectedMarket(marketInput.trim());
-                }
-              }}
-              placeholder="Kalerwe, Nakasero, Owino..."
-            />
-            <datalist id="market-options">
-              {filteredMarketOptions.map((market) => (
-                <option key={market.id} value={market.name} label={market.region_location} />
-              ))}
-            </datalist>
-          </div>
-
+          {/* PRICE TYPE SWITCH */}
           <div className={styles.switchGroup}>
             <span className={styles.switchLabel}>Price type</span>
             <div className={styles.switchButtons}>
@@ -382,6 +488,7 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
+          {/* TIMEFRAME SWITCH */}
           <div className={styles.timeframeGroup}>
             <span className={styles.switchLabel}>Timeframe</span>
             <div className={styles.switchButtons}>
@@ -391,16 +498,34 @@ const AnalyticsPage = () => {
                   type="button"
                   className={`${styles.switchButton} ${timeframe === option.value ? styles.switchButtonActive : ''}`}
                   onClick={() => setTimeframe(option.value)}
+                  disabled={loading}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
           </div>
+
+          <div className={styles.filterActions}>
+            <button type="button" className={styles.secondaryButton} onClick={resetFilters} disabled={!hasActiveFilters}>
+              Clear filters
+            </button>
+          </div>
+        </section>
+
+        {/* ACTIVE TAGS & FEEDBACK */}
+        <section className={styles.activeFiltersPanel} aria-label="Active filters">
+          <div className={styles.filterTagsRow}>
+            {activeFilterTags.length ? activeFilterTags.map((tag) => (
+              <span key={tag.id} className={styles.activeFilterTag}>{tag.label}</span>
+            )) : <span className={styles.activeFilterTagMuted}>No filters applied — showing overall market analytics.</span>}
+          </div>
+          {searchFeedback && <p className={styles.searchFeedback}>{searchFeedback}</p>}
         </section>
 
         {error ? <div className={styles.errorBanner}>{error}</div> : null}
 
+        {/* MAIN CHART AND DATA PANELS */}
         <section className={styles.chartGrid}>
           <article className={styles.chartCard}>
             <div className={styles.sectionHeader}>
@@ -408,84 +533,25 @@ const AnalyticsPage = () => {
                 <span className={styles.sectionEyebrow}>Live Trend</span>
                 <h2 className={styles.sectionTitle}>Wholesale vs. Retail price movement</h2>
               </div>
-              <p className={styles.sectionHint}>Tooltip context uses the current market filter: {tooltipMarketLabel}</p>
+              <p className={styles.sectionHint}>Context: {tooltipMarketLabel}</p>
             </div>
 
-            <div className={styles.chartStage}>
+            <div className={styles.chartStage} aria-busy={loading}>
               {loading ? (
-                <div className={styles.loadingState}>Loading chart data...</div>
+                <div className={styles.loadingState} role="status" aria-live="polite">Loading chart data...</div>
               ) : chartData.length ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 20, right: 24, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tickMargin={12} />
-                    <YAxis tickFormatter={(value) => `USh ${value / 1000}k`} width={72} />
-                    <Tooltip content={({ active, payload, label }) => {
-                      if (!active || !payload?.length) {
-                        return null;
-                      }
-
-                      return (
-                        <div className={styles.tooltipCard}>
-                          <strong>{label}</strong>
-                          <span>{tooltipMarketLabel}</span>
-                          {payload.map((entry) => (
-                            <div key={entry.dataKey} className={styles.tooltipRow}>
-                              <span>{entry.name}</span>
-                              <strong>{formatUSh(entry.value)}</strong>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }} />
-                    <Legend />
-
-                    {displayCrops.map((cropName, index) => {
-                      const safeKey = slugify(cropName);
-                      const lineColor = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444'][index % 4];
-
-                      if (priceType === 'both' && cropName === primaryCropName) {
-                        return (
-                          <React.Fragment key={cropName}>
-                            <Line
-                              type="monotone"
-                              dataKey={resolveMetricKey(cropName, 'wholesale')}
-                              name={`${cropName} Wholesale`}
-                              stroke={lineColor}
-                              strokeWidth={3}
-                              dot={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey={resolveMetricKey(cropName, 'retail')}
-                              name={`${cropName} Retail`}
-                              stroke={lineColor}
-                              strokeDasharray="6 4"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                          </React.Fragment>
-                        );
-                      }
-
-                      const priceKey = priceType === 'retail' ? 'retail' : 'wholesale';
-
-                      return (
-                        <Line
-                          key={cropName}
-                          type="monotone"
-                          dataKey={resolveMetricKey(cropName, priceKey)}
-                          name={cropName}
-                          stroke={lineColor}
-                          strokeWidth={cropName === primaryCropName ? 3 : 2}
-                          dot={false}
-                        />
-                      );
-                    })}
-                  </LineChart>
-                </ResponsiveContainer>
+                <PriceTrendChart
+                  data={chartData}
+                  displayCrops={displayCrops}
+                  primaryCropName={primaryCropName}
+                  priceType={priceType}
+                  resolveMetricKey={resolveMetricKey}
+                  tooltipContent={renderTooltip}
+                  xAxisKey="label"
+                  yAxisFormatter={(value) => `USh ${value / 1000}k`}
+                />
               ) : (
-                <div className={styles.emptyState}>No chart data matches the current filters.</div>
+                <div className={styles.emptyState} role="status">No chart data matches the current filters.</div>
               )}
             </div>
 
@@ -497,11 +563,12 @@ const AnalyticsPage = () => {
           </article>
 
           <aside className={styles.sideStack}>
+            {/* DEDUPLICATED MARKET SPREAD TABLE */}
             <article className={styles.sideCard}>
               <div className={styles.sectionHeaderCompact}>
                 <div>
-                  <span className={styles.sectionEyebrow}>Arbitrage</span>
-                  <h2 className={styles.sectionTitle}>Market spread on the same date</h2>
+                  <span className={styles.sectionEyebrow}>Market Snapshot</span>
+                  <h2 className={styles.sectionTitle}>Latest prices by location</h2>
                 </div>
               </div>
 
@@ -509,78 +576,34 @@ const AnalyticsPage = () => {
                 <table className={styles.dataTable}>
                   <thead>
                     <tr>
-                      <th>Market</th>
+                      <th>Market / Crop</th>
                       <th>Wholesale</th>
                       <th>Retail</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {analytics?.arbitrage?.rows?.length ? analytics.arbitrage.rows.map((row) => (
-                      <tr key={`${row.market__name}-${row.market__region_location}`}>
+                    {filteredAnalytics.length ? filteredAnalytics.slice(0, 10).map((row) => (
+                      <tr key={`${row.id}-${row.marketName}-${row.cropName}`}>
                         <td>
-                          <strong>{row.market__name}</strong>
-                          <span>{row.market__region_location}{row.market__village ? ` · ${row.market__village}` : ''}</span>
+                          <strong>{row.cropName}</strong>
+                          <span>{row.marketName}{row.region ? ` · ${row.region}` : ''}</span>
                         </td>
-                        <td>{formatUSh(row.wholesale_price)}</td>
-                        <td>{formatUSh(row.retail_price)}</td>
+                        <td>{formatUSh(row.wholesalePrice)}</td>
+                        <td>{formatUSh(row.retailPrice)}</td>
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="3" className={styles.tableEmpty}>Select a crop to surface same-day market arbitrage.</td>
+                        <td colSpan="3" className={styles.tableEmpty}>No records available for the selected query.</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
             </article>
-
-            <article className={styles.sideCard}>
-              <div className={styles.sectionHeaderCompact}>
-                <div>
-                  <span className={styles.sectionEyebrow}>Volatility</span>
-                  <h2 className={styles.sectionTitle}>Most unstable commodities</h2>
-                </div>
-              </div>
-
-              <div className={styles.listStack}>
-                {analytics?.volatility?.length ? analytics.volatility.map((item, index) => (
-                  <div key={item['crop__name']} className={styles.rankRow}>
-                    <div>
-                      <strong>{index + 1}. {item['crop__name']}</strong>
-                      <span>{item['crop__category']} · {item.observation_count} points</span>
-                    </div>
-                    <strong>{formatUSh(item.price_range)}</strong>
-                  </div>
-                )) : <div className={styles.tableEmpty}>No volatility rankings available yet.</div>}
-              </div>
-            </article>
-
-            <article className={styles.sideCard}>
-              <div className={styles.sectionHeaderCompact}>
-                <div>
-                  <span className={styles.sectionEyebrow}>Seasonality</span>
-                  <h2 className={styles.sectionTitle}>Peak predictor</h2>
-                </div>
-              </div>
-
-              <div className={styles.listStack}>
-                {analytics?.seasonal_insights?.length ? analytics.seasonal_insights.map((item) => (
-                  <div key={item.crop} className={styles.seasonRow}>
-                    <div className={styles.seasonHeader}>
-                      <strong>{item.crop}</strong>
-                      <span>{item.status}</span>
-                    </div>
-                    <div className={styles.progressTrack}>
-                      <div className={styles.progressFill} style={{ width: `${formatRatio(item.ratio)}%` }} />
-                    </div>
-                    <small>{formatUSh(item.recent_average)} vs {formatUSh(item.baseline_average)}</small>
-                  </div>
-                )) : <div className={styles.tableEmpty}>Seasonal context appears after enough history loads.</div>}
-              </div>
-            </article>
           </aside>
         </section>
 
+        {/* OVERLAY / COMPARE CROPS */}
         <section className={styles.chipPanel}>
           <div className={styles.sectionHeaderCompact}>
             <div>
@@ -596,20 +619,21 @@ const AnalyticsPage = () => {
               list="compare-crop-options"
               placeholder="Type a crop and press Enter to add it"
               value={compareInput}
-              onChange={(event) => setCompareInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
+              onChange={(e) => setCompareInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
                   addCompareCrop(compareInput);
                 }
               }}
+              aria-label="Add a crop to compare"
             />
             <datalist id="compare-crop-options">
-              {availableCrops.map((crop) => (
-                <option key={`compare-${crop.id}`} value={crop.name} label={crop.category} />
+              {availableCrops.map((cropName, idx) => (
+                <option key={`compare-${idx}`} value={cropName} />
               ))}
             </datalist>
-            <button type="button" className={styles.secondaryButton} onClick={() => addCompareCrop(compareInput)}>
+            <button type="button" className={styles.secondaryButton} onClick={() => addCompareCrop(compareInput)} disabled={loading}>
               Add crop
             </button>
           </div>

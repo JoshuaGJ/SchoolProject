@@ -146,6 +146,11 @@
   font-weight: 700;
 }
 
+.downTrend {
+  color: #ef4444;
+  font-weight: 700;
+}
+
 /* 🌟 HOW IT WORKS SECTION DETAILS */
 .infoSection {
   max-width: 1200px;

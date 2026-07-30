@@ -91,6 +91,13 @@ class AnalyticsOverviewView(APIView):
         queryset = PriceRecord.objects.select_related('crop', 'market').filter(timestamp__gte=cutoff)
         return _apply_filters(queryset, crop_names=crop_names, regions=regions, markets=markets)
 
+    def _availability_queryset(self, request, cutoff):
+        regions = _clean_terms(request.query_params.get('region') or request.query_params.get('regions'))
+        markets = _clean_terms(request.query_params.get('market') or request.query_params.get('markets'))
+
+        queryset = PriceRecord.objects.select_related('crop', 'market').filter(timestamp__gte=cutoff)
+        return _apply_filters(queryset, regions=regions, markets=markets)
+
     def _chart_rows(self, queryset, timeframe, crop_names):
         bucket = _bucket_expression(timeframe)
         chart_queryset = queryset.annotate(period=bucket)
@@ -119,6 +126,12 @@ class AnalyticsOverviewView(APIView):
         timeframe = (request.query_params.get('timeframe') or '3M').upper()
         crop_names = _clean_terms(request.query_params.get('compare_crops') or request.query_params.get('crop'))
         selected_crop = request.query_params.get('arbitrage_crop') or (crop_names[0] if crop_names else '')
+        crop_search_term = (request.query_params.get('crop_search') or '').strip()
+
+        try:
+            limit = int(request.query_params.get('limit') or 0)
+        except (TypeError, ValueError):
+            limit = 0
 
         cutoff = _timeframe_cutoff(timeframe)
         base_queryset = self._base_queryset(request, cutoff)
@@ -238,8 +251,15 @@ class AnalyticsOverviewView(APIView):
                     ).order_by('wholesale_price', 'market__name')
                 )
 
+        availability_queryset = self._availability_queryset(request, cutoff)
+        available_crops_queryset = Crop.objects.filter(price_records__in=availability_queryset)
+
+        if crop_search_term:
+            available_crops_queryset = available_crops_queryset.filter(name__icontains=crop_search_term)
+
         available_crops = list(
-            Crop.objects.filter(price_records__in=base_queryset).distinct().order_by('name').values('id', 'name', 'category')
+            available_crops_queryset.distinct().order_by('name').values('id', 'name', 'category')[:limit] if limit else
+            available_crops_queryset.distinct().order_by('name').values('id', 'name', 'category')
         )
         available_regions = list(
             Market.objects.filter(price_records__in=base_queryset).distinct().order_by('region_location').values_list('region_location', flat=True)

@@ -159,18 +159,16 @@
   margin-top: 18px;
   padding: 18px;
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr auto;
   gap: 14px;
   align-items: end;
-  position: sticky;
-  top: 16px;
-  z-index: 25;
   backdrop-filter: blur(18px);
 }
 
 .filterField,
 .switchGroup,
-.timeframeGroup {
+.timeframeGroup,
+.filterActions {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -179,6 +177,27 @@
 .filterField label {
   font-size: 0.8rem;
   color: var(--muted-color);
+}
+
+.inputWithSpinner {
+  position: relative;
+}
+
+.inputWithSpinner .filterInput {
+  padding-right: 42px;
+}
+
+.inputSpinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--accent-color) 45%, transparent);
+  border-top-color: var(--accent-color);
+  animation: analytics-spin 0.75s linear infinite;
+  transform: translateY(-50%);
 }
 
 .filterInput {
@@ -200,6 +219,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.filterActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.filterHint {
+  font-size: 0.8rem;
+  color: var(--muted-color);
+  line-height: 1.45;
 }
 
 .switchButton {
@@ -303,25 +336,44 @@
 }
 
 .comparePills,
-.chipList {
+.chipList,
+.filterTagsRow {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
 }
 
+.activeFiltersPanel {
+  margin-top: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--analytics-border);
+  background: color-mix(in srgb, var(--analytics-card) 92%, transparent);
+  border-radius: 20px;
+}
+
 .comparePill,
 .chip,
-.comparePillMuted {
+.comparePillMuted,
+.activeFilterTag,
+.activeFilterTagMuted {
   border-radius: 999px;
   padding: 9px 12px;
   border: 1px solid var(--analytics-border);
-  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 16%, white 84%), color-mix(in srgb, var(--accent-color) 8%, transparent));
   color: var(--text-color);
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
-.comparePillMuted {
+.comparePillMuted,
+.activeFilterTagMuted {
   color: var(--muted-color);
+  background: color-mix(in srgb, var(--bg-color) 88%, transparent);
+}
+
+.activeFilterTag {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color) 18%, white 82%), color-mix(in srgb, var(--accent-color) 8%, transparent));
 }
 
 .sideStack {
@@ -441,10 +493,20 @@
   font-weight: 800;
 }
 
+@keyframes analytics-spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
 @media (max-width: 1180px) {
   .kpiGrid,
   .filterBar,
   .chartGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filterBar {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -467,6 +529,10 @@
   .kpiGrid,
   .filterBar,
   .chartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterBar {
     grid-template-columns: 1fr;
   }
 

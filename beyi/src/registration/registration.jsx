@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import styles from './registration.module.css'
 import { fetchJson } from '../lib/api'
+import { Link, useNavigate } from 'react-router-dom'
 
 function SignupForm() {
     const [role, setRole] = useState('farmer')
@@ -15,6 +16,7 @@ function SignupForm() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+    const navigate = useNavigate()
 
     const handleRoleSelect = (selectedRole) => {
         setRole(selectedRole)
@@ -61,10 +63,12 @@ function SignupForm() {
             }
 
             setSuccess('Account created successfully. You can now log in.')
+            navigate('/login')
         } catch (requestError) {
             setError(requestError.message || 'Unable to create account.')
         } finally {
             setLoading(false)
+           
         }
     }
 
@@ -137,7 +141,7 @@ function SignupForm() {
                 {success && <p>{success}</p>}
 
                 <button type="submit" disabled={loading}>{loading ? 'CREATING...' : 'CREATE ACCOUNT'}</button>
-                <p>already have an account? <a href="/auth">LogIn</a></p>
+                <p>already have an account? <Link to="/login">LogIn</Link></p>
             </form>
 
             <form className={styles.form2} action="">

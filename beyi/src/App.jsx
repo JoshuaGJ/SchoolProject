@@ -13,7 +13,7 @@ function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/home" element={<Searchdash/>}/>
           <Route path="/analytics" element={<AnalyticsPage/>}/>
           <Route path="/login" element={<Login/>}/>
