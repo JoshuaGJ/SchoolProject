@@ -1,7 +1,9 @@
 .globalHeader {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 18px;
   padding: 14px 24px;
   background-color: var(--bg-color);
   border-bottom: 1px solid var(--border-color, #636663);
@@ -12,8 +14,15 @@
   font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
-  color: #10b981; /* Beyi Emerald Brand Color */
+  color: #10b981;
   letter-spacing: -0.5px;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
 }
 
 .headerActions {
@@ -46,6 +55,25 @@
   color: #10b981;
 }
 
+.menuButton {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.menuBar {
+  width: 16px;
+  height: 2px;
+  background-color: var(--text-color);
+  border-radius: 999px;
+}
+
 .profileMenu {
   display: flex;
   align-items: center;
@@ -70,7 +98,7 @@
   width: 36px;
   height: 36px;
   background-color: #10b981;
-  color:  var(--text-color);
+  color: var(--text-color);
   font-size: 0.85rem;
   font-weight: 700;
   border-radius: 50%;
@@ -81,13 +109,104 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-/* 📱 Small Screens Optimization */
-@media (max-width: 520px) {
-  .headerUserName {
-    display: none; /* Safely strips text to keep layout intact on mobile rows */
+.mobileMenu {
+  display: none;
+}
+
+.mobileNavLink {
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.mobileNavLink:hover {
+  background-color: var(--bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+@media (max-width: 768px) {
+  .globalHeader {
+    flex-wrap: wrap;
   }
-  
+
+  .navLinks {
+    display: none;
+  }
+
+  .menuButton {
+    display: flex;
+  }
+
+  .mobileMenu {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 12px;
+  }
+
+  .mobileMenuOpen {
+    display: flex;
+  }
+}
+
+@media (max-width: 520px) {
+  .globalHeader {
+    padding: 14px 16px;
+  }
+
+  .headerUserName {
+    display: none;
+  }
+
   .profileMenu {
     padding: 0;
   }
+}
+
+.adjacentTablesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.tableCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.recordBadge {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  background-color: var(--badge-bg, #f3f4f6);
+  color: var(--badge-text, #4b5563);
+}
+
+.tableFooter {
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.loadMoreButton {
+  background: transparent;
+  border: 1px solid var(--primary-color, #16a34a);
+  color: var(--primary-color, #16a34a);
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loadMoreButton:hover {
+  background-color: var(--primary-color, #16a34a);
+  color: #fff;
 }

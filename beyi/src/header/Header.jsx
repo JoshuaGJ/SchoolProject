@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
-import { useTheme } from '../ThemeContext'; // 🌟 Importing your custom context hook
+import { useTheme } from '../ThemeContext';
 import { fetchJson } from '../lib/api';
 
 const Header = () => {
-  const { isLightTheme, toggleTheme } = useTheme(); // 🌟 Extracting global variables
+  const { isLightTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -19,15 +20,15 @@ const Header = () => {
         return;
       }
       try {
-        const data = await fetchJson('/auth/user-profile/'); 
+        const data = await fetchJson('/auth/user-profile/');
         if (data && data.full_name) {
           setUser({
             name: data.full_name,
-            initials: data.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            initials: data.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(),
           });
         }
       } catch (err) {
-        console.error("Header Profile Sync Error:", err.message);
+        console.error('Header Profile Sync Error:', err.message);
         setUser(null);
       } finally {
         setLoading(false);
@@ -37,42 +38,71 @@ const Header = () => {
     fetchUserData();
   }, []);
 
+  const closeMenu = () => setMenuOpen(false);
+
+  const navItems = [
+    { label: 'Home', to: '/landing' },
+    { label: 'Search', to: '/home' },
+    { label: 'Analytics', to: '/analytics' },
+  ];
+
   return (
     <header className={`${styles.globalHeader} ${isLightTheme ? styles.lightMode : styles.darkMode}`}>
-      {/* Left End: Brand Logo */}
       <div className={styles.brand} onClick={() => navigate('/landing')}>
         Beyi
       </div>
-      
-      {/* Right End: Theme Toggle & User Account Wrapper */}
+
+      <nav className={styles.navLinks} aria-label="Primary navigation">
+        {navItems.map((item) => (
+          <Link key={item.to} to={item.to} className={styles.authLinks} onClick={closeMenu}>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
       <div className={styles.headerActions}>
-        <button 
-          onClick={toggleTheme} 
+        <button
+          onClick={toggleTheme}
           className={styles.themeToggle}
           aria-label="Toggle visual interface theme"
         >
-          {/* 🌟 Dynamic Icon matching active state */}
           {isLightTheme ? '🌙' : '☀️'}
+        </button>
+
+        <button
+          type="button"
+          className={styles.menuButton}
+          aria-label="Toggle navigation menu"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => setMenuOpen((current) => !current)}
+        >
+          <span className={styles.menuBar} />
+          <span className={styles.menuBar} />
+          <span className={styles.menuBar} />
         </button>
 
         {loading ? (
           <div className={styles.avatarLoading}>⏳</div>
         ) : user ? (
-          <>
-            <Link to="/analytics" className={styles.authLinks}>Analytics</Link>
-            <div className={styles.profileMenu} onClick={() => navigate('/profile')}>
-              <span className={styles.headerUserName}>{user.name}</span>
-              <div className={styles.avatarPlaceholder} title="View Profile">
-                {user.initials}
-              </div>
+          <div className={styles.profileMenu} onClick={() => navigate('/profile')}>
+            <span className={styles.headerUserName}>{user.name}</span>
+            <div className={styles.avatarPlaceholder} title="View Profile">
+              {user.initials}
             </div>
-          </>
+          </div>
         ) : (
-          <>
-            <Link to="/analytics" className={styles.authLinks}>Analytics</Link>
-            <Link to="/auth" className={styles.authLinks}>Login / Signup</Link>
-          </>
+          <Link to="/login" className={styles.authLinks}>Login / Signup</Link>
         )}
+      </div>
+
+      <div id="mobile-navigation" className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
+        {navItems.map((item) => (
+          <Link key={item.to} to={item.to} className={styles.mobileNavLink} onClick={closeMenu}>
+            {item.label}
+          </Link>
+        ))}
+        {!user && <Link to="/login" className={styles.mobileNavLink} onClick={closeMenu}>Login / Signup</Link>}
       </div>
     </header>
   );

@@ -10,88 +10,106 @@ import {
   Legend,
 } from 'recharts';
 
-/**
- * PriceTrendChart Component
- *
- * @param {Array} data - Chart dataset array
- * @param {Array} displayCrops - Array of crop names to display as lines
- * @param {string} primaryCropName - Main crop being focused on (rendered thicker)
- * @param {'wholesale' | 'retail' | 'both'} priceType - Currently selected price filter
- * @param {Function} resolveMetricKey - Helper (cropName, priceType) => dataKey string
- */
 export default function PriceTrendChart({
   data = [],
   displayCrops = [],
   primaryCropName = '',
   priceType = 'wholesale',
   resolveMetricKey = (crop, type) => `${crop}_${type}`,
-  xAxisKey = 'label',
-  yAxisFormatter = (value) => value,
+  yAxisKey = 'label',
   tooltipContent = null,
 }) {
-  const lineColors = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+  const cropPalette = [
+    { wholesale: '#0ea5e9', retail: '#0284c7' },
+    { wholesale: '#10b981', retail: '#059669' },
+    { wholesale: '#f59e0b', retail: '#d97706' },
+    { wholesale: '#8b5cf6', retail: '#7c3aed' },
+  ];
 
   const renderChartLines = () => {
     if (!displayCrops || displayCrops.length === 0) return [];
 
     return displayCrops.flatMap((cropName, index) => {
-      const lineColor = lineColors[index % lineColors.length];
+      const palette = cropPalette[index % cropPalette.length];
       const isPrimary = cropName === primaryCropName;
+      const lines = [];
 
-      if (priceType === 'both' && isPrimary) {
-        return [
+      // Wholesale line
+      if (priceType === 'wholesale' || priceType === 'both') {
+        lines.push(
           <Line
             key={`${cropName}-wholesale`}
             type="monotone"
             dataKey={resolveMetricKey(cropName, 'wholesale')}
             name={`${cropName} (Wholesale)`}
-            stroke={lineColor}
-            strokeWidth={3}
-            dot={false}
+            stroke={palette.wholesale}
+            strokeWidth={isPrimary ? 3 : 2}
+            connectNulls
+            dot={{ r: 4 }}
             isAnimationActive={false}
-          />,
+          />
+        );
+      }
+
+      // Retail line
+      if (priceType === 'retail' || priceType === 'both') {
+        lines.push(
           <Line
             key={`${cropName}-retail`}
             type="monotone"
             dataKey={resolveMetricKey(cropName, 'retail')}
             name={`${cropName} (Retail)`}
-            stroke={lineColor}
-            strokeDasharray="6 4"
-            strokeWidth={2}
-            dot={false}
+            stroke={palette.retail}
+            strokeDasharray="5 5"
+            strokeWidth={isPrimary ? 2.5 : 1.5}
+            connectNulls
+            dot={{ r: 4 }}
             isAnimationActive={false}
-          />,
-        ];
+          />
+        );
       }
 
-      const activePriceKey = priceType === 'retail' ? 'retail' : 'wholesale';
-      return [
-        <Line
-          key={cropName}
-          type="monotone"
-          dataKey={resolveMetricKey(cropName, activePriceKey)}
-          name={cropName}
-          stroke={lineColor}
-          strokeWidth={isPrimary ? 3 : 2}
-          dot={false}
-          isAnimationActive={false}
-        />,
-      ];
+      return lines;
     });
   };
 
   return (
-    <div style={{ width: '100%', height: 400 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 10, bottom: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-          <XAxis dataKey={xAxisKey} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
-          <YAxis tickLine={false} axisLine={{ stroke: '#cbd5e1' }} tickFormatter={yAxisFormatter} />
-          {tooltipContent ? <Tooltip content={tooltipContent} /> : <Tooltip />}
-          <Legend />
-          {renderChartLines()}
-        </LineChart>
-      </ResponsiveContainer>
+    /* Outer container with horizontal overflow scrolling */
+    <div style={{ width: '100%', overflowX: 'auto', overflowY: 'hidden' }}>
+      {/* MinWidth ensures the chart expands horizontally if price range grows */}
+      <div style={{ minWidth: 700, width: '100%', height: 450 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            layout="vertical"
+            data={data}
+            margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+          >
+            {/* Grid lines: horizontal = true (month separators), vertical = false (removes vertical price lines) */}
+            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#cbd5e1" />
+
+            {/* X-AXIS: Starts at 0 */}
+            <XAxis
+              type="number"
+              domain={[0, 'dataMax + 1000']}
+              tickFormatter={(val) => `USh ${val / 1000}k`}
+              tickLine={false}
+              axisLine={{ stroke: '#94a3b8' }}
+            />
+
+            {/* Y-AXIS: Month Labels */}
+            <YAxis
+              type="category"
+              dataKey={yAxisKey}
+              tickLine={false}
+              axisLine={{ stroke: '#94a3b8' }}
+            />
+
+            {tooltipContent ? <Tooltip content={tooltipContent} /> : <Tooltip />}
+            <Legend />
+            {renderChartLines()}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
